@@ -4,12 +4,13 @@
   "description": "CV Watch aggregates current and historical covid-19 numbers and presents the data in a clean visual manner.",
   "main": "index.js",
   "scripts": {
-    "build": "rollup -c",
+    "build": "npm run build:css && rollup -c",
     "build:css": "postcss src/styles/main.css -o public/static/css/main.css --env production",
     "watch:css": "postcss src/styles/main.css -o public/static/css/main.css -w",
     "watch": "rollup -c -w",
     "dev": "npm-run-all --parallel start watch:css watch",
-    "start": "serve public"
+    "start": "serve public",
+    "deploy": "npm run build && cp -a public/. docs/"
   },
   "repository": {
     "type": "git",

@@ -6,8 +6,9 @@ const router = (config = {}) => {
   switch (url.pathname) {
     case '':
     case '/':
-    default:
       return views.home(title);
+    default:
+      return views.notFound;
   }
 };
 

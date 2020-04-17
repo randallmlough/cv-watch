@@ -1,20 +1,36 @@
-import { render as Render } from 'lit-html';
-import router from './router';
+import { format, parse } from 'date-fns';
 
-const render = (element, route) => {
-  const { layout, onMount } = route;
-  Render(layout, element);
-  if (onMount) {
-    onMount();
+export default class App {
+  constructor(page) {
+    this.page = page;
   }
-};
 
-const appConfig = {
-  title: 'CV Watch',
-};
+  getDataset(source, datapoints = {}) {
+    if (!source) {
+      return null;
+    }
 
-document.addEventListener('DOMContentLoaded', () => {
-  const root = document.getElementById('root');
-  const route = router(appConfig);
-  render(root, route);
-});
+    const labels = [];
+    const results = [];
+    for (let [datapoint, options] of Object.entries(datapoints)) {
+      const data = [];
+      source.forEach((value) => {
+        if (value['date']) {
+          const date = format(
+            parse(value['date'], 'yyyyMMdd', new Date()),
+            'MM/dd/yyyy',
+          );
+          labels.push(date);
+        }
+        if (value[datapoint]) {
+          data.push(value[datapoint]);
+        }
+      });
+      results.push({ data, options, labels });
+    }
+
+    return results;
+  }
+  onMount() {}
+  render() {}
+}

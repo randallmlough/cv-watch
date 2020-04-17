@@ -1,2 +1,3 @@
-export { default as home } from './home';
-export { default as notFound } from './404';
+export { default as MainPage } from './main';
+export { default as StatesPage } from './state';
+export { default as NotFound } from './404';

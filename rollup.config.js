@@ -7,16 +7,17 @@ import { terser } from 'rollup-plugin-terser';
 const production = !process.env.ROLLUP_WATCH;
 
 export default {
-  input: 'src/app.js',
+  input: 'src/index.js',
   output: {
     file: 'public/static/js/bundle.js',
     format: 'iife', // immediately-invoked function expression — suitable for <script> tags
     sourcemap: true,
   },
+  paths: { stream: ['./node_modules/readable-stream'] },
   plugins: [
     resolve(), // tells Rollup how to find date-fns in node_modules
     commonjs(), // converts date-fns to ES modules
     production && terser(), // minify, but only in production
   ],
-  //   external: ['moment'],
+  // external: ['moment'],
 };

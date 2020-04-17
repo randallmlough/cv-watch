@@ -22,9 +22,9 @@ export const cssVar = (name) => {
  */
 export const datasetColorGenerator = (color) => {
   return {
-    backgroundColor: cssVar(`--color-${color}-500-a25`),
-    borderColor: cssVar(`--color-${color}-500`),
-    hoverBackgroundColor: cssVar(`--color-${color}-500-a75`),
-    hoverBorderColor: cssVar(`--color-${color}-500`),
+    backgroundColor: cssVar(`--color-${color}-500-a25`).trim(),
+    borderColor: cssVar(`--color-${color}-500`).trim(),
+    hoverBackgroundColor: cssVar(`--color-${color}-500-a75`).trim(),
+    hoverBorderColor: cssVar(`--color-${color}-500`).trim(),
   };
 };

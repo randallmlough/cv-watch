@@ -72,6 +72,10 @@ export default class Homepage extends App {
     return html`
       <div class="container mx-auto py-5 px-5 lg:px-0">
         <h1 class="text-6xl text-primary-500">${title}</h1>
+        <h2 class="md:w-1/2 lg:w-4/12 text-gray-600">
+          Aggregating Covid-19 data from credible sources and presenting the
+          data in an easy to digest manner.
+        </h2>
       </div>
       <div class="container mx-auto py-5 px-5 lg:px-0 mb-5">
         ${dataCards(data)}

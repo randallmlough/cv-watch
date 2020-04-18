@@ -5,6 +5,8 @@ import App from '../app';
 import { lazyTable, dataCards } from '../templates';
 import loadData from '../data';
 
+const page = 'United States';
+
 const mainData = loadData('covid_tracking_project/us-daily.csv').then(
   (results) => results.data,
 );
@@ -65,33 +67,37 @@ export default class Homepage extends App {
   }
 
   render() {
-    const { title } = this.page;
+    const { appTitle } = this.config;
     const data = mainData.then((results) => {
       return { current: results[0], previous: results[1] };
     });
     return html`
       <div class="container mx-auto py-5 px-5 lg:px-0">
-        <h1 class="text-6xl text-primary-500">${title}</h1>
-        <h2 class="md:w-1/2 lg:w-4/12 text-gray-600">
+        <h1 class="text-6xl text-primary-500">${appTitle}</h1>
+        <h3 class="md:w-1/2 lg:w-4/12 text-gray-600">
           Aggregating Covid-19 data from credible sources and presenting the
           data in an easy to digest manner.
+        </h3>
+      </div>
+      <div class="container mx-auto pt-5 px-5 lg:px-0">
+        <h2 class="text-6xl text-gray-700 font-bold">
+          ${page}
         </h2>
       </div>
-      <div class="container mx-auto py-5 px-5 lg:px-0 mb-5">
+      <div class="container mx-auto pb-5 px-5 lg:px-0 mb-5">
         ${dataCards(data)}
       </div>
       <section>
         <div class="container bg-white mb-10 mx-auto p-5 rounded shadow">
           <header class="mb-5">
             <h3 class="font-bold text-xl text-gray-700">Positive cases</h3>
-            <p class="text-gray-600">United States daily cases</p>
+            <p class="text-gray-600">${page} daily cases</p>
           </header>
           <canvas id="positive" width="400" height="400"></canvas>
         </div>
         <div class="container bg-white mb-10 mx-auto p-5 rounded shadow">
           <header class="mb-5">
             <h3 class="font-bold text-xl text-gray-700">Total Deaths</h3>
-            <p class="text-gray-600">United States daily cases</p>
           </header>
           <canvas id="deaths" width="400" height="400"></canvas>
         </div>

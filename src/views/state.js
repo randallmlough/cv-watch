@@ -47,7 +47,6 @@ export default class State extends App {
   }
 
   render() {
-    const { title } = this.page;
     const currentData = stateData.then((results) => {
       return { current: results[0], previous: results[1] };
     });

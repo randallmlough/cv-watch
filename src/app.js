@@ -1,8 +1,11 @@
 import { format, parse } from 'date-fns';
 
+const defaults = {
+  appTitle: '',
+};
 export default class App {
-  constructor(page) {
-    this.page = page;
+  constructor(config) {
+    this.config = { ...defaults, ...config };
   }
 
   getDataset(source, datapoints = {}) {

@@ -71,7 +71,7 @@ export default class Homepage extends Page {
       .then((results) => formatStatesTableData(results.value));
     return html`
       <div class="container mx-auto py-5 px-5 lg:px-0">
-        <h1 class="text-4xl lg:text-6xl text-primary-500">${title}</h1>
+        <!-- <h1 class="text-4xl lg:text-6xl text-primary-500">${title}</h1> -->
         <h3 class="md:w-1/2 lg:w-4/12 text-gray-600">
           Aggregating Covid-19 data from credible sources and presenting the
           data in an easy to digest manner.

@@ -4,7 +4,7 @@ import Data from './data';
 const dataSource = new Data();
 
 const appConfig = {
-  title: 'CV ⌚',
+  title: 'CV 🕵️‍♂️',
   dataSource,
 };
 

@@ -22351,17 +22351,17 @@
     };
 
     const logo = html`<a href="/#/"
-  ><h1 class="text-2xl text-primary-500">CV ⌚</h1></a
+  ><h1 class="text-2xl text-primary-500">CV 🕵️‍♂️</h1></a
 >`;
 
     const navbar = html`
   <header>
     <div class="container mx-auto flex items-center py-4 px-5 lg:px-0">
-      <div class="mr-10">${logo}</div>
+      <!-- <div class="mr-10">${logo}</div> -->
       <nav>
         <ul>
           <li>
-            <a href="/#/" class="text-blue-400 text-sm font-bold">Home</a>
+            <a href="/#/" class="text-blue-400 text-sm font-bold">Back</a>
           </li>
         </ul>
       </nav>
@@ -22456,7 +22456,7 @@
           .then((results) => formatStatesTableData(results.value));
         return html`
       <div class="container mx-auto py-5 px-5 lg:px-0">
-        <h1 class="text-4xl lg:text-6xl text-primary-500">${title}</h1>
+        <!-- <h1 class="text-4xl lg:text-6xl text-primary-500">${title}</h1> -->
         <h3 class="md:w-1/2 lg:w-4/12 text-gray-600">
           Aggregating Covid-19 data from credible sources and presenting the
           data in an easy to digest manner.
@@ -27354,7 +27354,7 @@
     const dataSource = new Data();
 
     const appConfig = {
-      title: 'CV ⌚',
+      title: 'CV 🕵️‍♂️',
       dataSource,
     };
 

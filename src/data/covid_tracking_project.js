@@ -10,27 +10,13 @@ const get = async function (url = '') {
   }
 };
 
-export const parseCSV = (file) =>
-  new Promise(async (resolve, reject) => {
-    try {
-      await Papa.parse(`/static/data/${file}`, {
-        header: true,
-        download: true,
-        complete: function (results) {
-          resolve(results);
-        },
-      });
-    } catch (e) {
-      reject(e);
-    }
-  });
-
 const ctpApi = 'https://covidtracking.com/api';
-export const CovidTrackingProject = {
-  loadFile: (fileName) =>
-    parseCSV(`/static/data/covid_tracking_project/${fileName}`),
+export default class CovidTrackingProject {
+  // loadFile(fileName) {
+  // parseCSV(`/static/data/covid_tracking_project/${fileName}`)
+  // }
 
-  fetchStatesCurrentValues: async () => {
+  async fetchStatesCurrentValues() {
     try {
       return formatCovidTrackingProjectStateData(
         await get(`${ctpApi}/v1/states/current.json`),
@@ -38,8 +24,8 @@ export const CovidTrackingProject = {
     } catch (e) {
       return e;
     }
-  },
-  fetchStatesHistoricData: async () => {
+  }
+  async fetchStatesHistoricData() {
     try {
       return formatCovidTrackingProjectStateData(
         await get(`${ctpApi}/v1/states/daily.json`),
@@ -47,8 +33,8 @@ export const CovidTrackingProject = {
     } catch (e) {
       return e;
     }
-  },
-  fetchStatesInformation: async () => {
+  }
+  async fetchStatesInformation() {
     try {
       return formatCovidTrackingProjectStateData(
         await get(`${ctpApi}/v1/states/info.json`),
@@ -56,11 +42,17 @@ export const CovidTrackingProject = {
     } catch (e) {
       return e;
     }
-  },
-  fetchUSCurrentValues: async () => get(`${ctpApi}/v1/us/current.json`),
-  fetchUSHistoricData: async () => get(`${ctpApi}/us/daily`),
-  fetchCounties: async () => get(`${ctpApi}/counties`),
-};
+  }
+  async fetchUSCurrentValues() {
+    return await get(`${ctpApi}/v1/us/current.json`);
+  }
+  async fetchUSHistoricData() {
+    return await get(`${ctpApi}/us/daily`);
+  }
+  async fetchCounties() {
+    return await get(`${ctpApi}/counties`);
+  }
+}
 
 const formatCovidTrackingProjectStateData = (data) => {
   const stateData = [];

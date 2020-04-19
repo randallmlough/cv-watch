@@ -1,5 +1,6 @@
 import { html } from 'lit-html';
 import { until } from 'lit-html/directives/until.js';
+import { statesAbv } from '../util';
 
 export const header = (title) => html`<th class="px-4 py-2">${title}</th>`;
 export const col = (content) =>
@@ -44,7 +45,9 @@ export const lazyTable = (source, opts = {}) => {
                     const href =
                       linkPrefix !== '' ? `${linkPrefix}/${col}` : `/${col}`;
                     return html`<td class="border px-4 py-2">
-                      <a href="${href}" class="text-blue-500">${col}</a>
+                      <a href="${href}" class="text-blue-500"
+                        >${statesAbv[col.toUpperCase()]}</a
+                      >
                     </td>`;
                   }
                   return html`<td class="border px-4 py-2">${col}</td>`;

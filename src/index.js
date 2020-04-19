@@ -1,20 +1,14 @@
-import { render as Render } from 'lit-html';
-import router from './router';
+import App from './app';
+import Data from './data';
 
-const render = (element, component) => {
-  // const [layout, onMount] = route;
-  Render(component.render(), element);
-  if (component.onMount) {
-    component.onMount();
-  }
-};
+const dataSource = new Data();
 
 const appConfig = {
   title: 'CV ⌚',
+  dataSource,
 };
 
-document.addEventListener('DOMContentLoaded', () => {
-  const app = document.getElementById('root');
-  const component = router(appConfig);
-  render(app, component);
+window.addEventListener('load', () => {
+  const root = document.getElementById('root');
+  new App(root, appConfig);
 });

@@ -1,5 +1,5 @@
 import { html } from 'lit-html';
-import { percentChange, numberWithCommas } from '../util/data';
+import { percentChange, numberWithCommas } from '../util';
 import { until } from 'lit-html/directives/until.js';
 
 const changeTemplate = (change) => {
@@ -65,14 +65,14 @@ export const dataCards = (source, cards) => {
       {
         title: 'Current Hospitalized',
         dataSource: source,
-        attribute: 'hospitalized',
+        attribute: 'hospitalizedCurrently',
       },
     ];
   }
 
-  return html`<div class="container mx-auto py-5 px-5 lg:px-0 mb-5">
+  return html`
     <div class="flex flex-wrap justify-around -mx-4">
       ${cards.map((card) => dataCard(card))}
     </div>
-  </div>`;
+  `;
 };

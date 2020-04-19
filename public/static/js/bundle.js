@@ -1128,7 +1128,7 @@
      *     container. Render options must *not* change between renders to the same
      *     container, as those changes will not effect previously rendered DOM.
      */
-    const render = (result, container, options) => {
+    const render$1 = (result, container, options) => {
         let part = parts.get(container);
         if (part === undefined) {
             removeNodes(container, container.firstChild);
@@ -1164,89 +1164,151 @@
      */
     const html = (strings, ...values) => new TemplateResult(strings, values, 'html', defaultTemplateProcessor);
 
-    /**
-     * @license
-     * Copyright (c) 2017 The Polymer Project Authors. All rights reserved.
-     * This code may only be used under the BSD style license found at
-     * http://polymer.github.io/LICENSE.txt
-     * The complete set of authors may be found at
-     * http://polymer.github.io/AUTHORS.txt
-     * The complete set of contributors may be found at
-     * http://polymer.github.io/CONTRIBUTORS.txt
-     * Code distributed by Google as part of the polymer project is also
-     * subject to an additional IP rights grant found at
-     * http://polymer.github.io/PATENTS.txt
-     */
-    const _state = new WeakMap();
-    // Effectively infinity, but a SMI.
-    const _infinity = 0x7fffffff;
-    /**
-     * Renders one of a series of values, including Promises, to a Part.
-     *
-     * Values are rendered in priority order, with the first argument having the
-     * highest priority and the last argument having the lowest priority. If a
-     * value is a Promise, low-priority values will be rendered until it resolves.
-     *
-     * The priority of values can be used to create placeholder content for async
-     * data. For example, a Promise with pending content can be the first,
-     * highest-priority, argument, and a non_promise loading indicator template can
-     * be used as the second, lower-priority, argument. The loading indicator will
-     * render immediately, and the primary content will render when the Promise
-     * resolves.
-     *
-     * Example:
-     *
-     *     const content = fetch('./content.txt').then(r => r.text());
-     *     html`${until(content, html`<span>Loading...</span>`)}`
-     */
-    const until = directive((...args) => (part) => {
-        let state = _state.get(part);
-        if (state === undefined) {
-            state = {
-                lastRenderedIndex: _infinity,
-                values: [],
-            };
-            _state.set(part, state);
+    const parseRequestURL = () => {
+      let url = location.hash.slice(1).toLowerCase() || '/';
+      let r = url.split('/');
+      let request = {
+        resource: null,
+        id: null,
+        verb: null,
+      };
+      request.resource = r[1];
+      request.id = r[2];
+      request.verb = r[3];
+
+      return request;
+    };
+
+    function numberWithCommas(number) {
+      return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+    const percentChange = (newValue, oldValue) => {
+      let change = (newValue - oldValue) / oldValue;
+      return (change * 100).toFixed(2);
+    };
+
+    const statesAbv = {
+      AL: 'Alabama',
+      AK: 'Alaska',
+      AZ: 'Arizona',
+      AR: 'Arkansas',
+      CA: 'California',
+      CO: 'Colorado',
+      CT: 'Connecticut',
+      DE: 'Delaware',
+      FL: 'Florida',
+      GA: 'Georgia',
+      HI: 'Hawaii',
+      ID: 'Idaho',
+      IL: 'Illinois',
+      IN: 'Indiana',
+      IA: 'Iowa',
+      KS: 'Kansas',
+      KY: 'Kentucky',
+      LA: 'Louisiana',
+      ME: 'Maine',
+      MD: 'Maryland',
+      MA: 'Massachusetts',
+      MI: 'Michigan',
+      MN: 'Minnesota',
+      MS: 'Mississippi',
+      MO: 'Missouri',
+      MT: 'Montana',
+      NE: 'Nebraska',
+      NV: 'Nevada',
+      NH: 'New Hampshire',
+      NJ: 'New Jersey',
+      NM: 'New Mexico',
+      NY: 'New York',
+      NC: 'North Carolina',
+      ND: 'North Dakota',
+      OH: 'Ohio',
+      OK: 'Oklahoma',
+      OR: 'Oregon',
+      PA: 'Pennsylvania',
+      RI: 'Rhode Island',
+      SC: 'South Carolina',
+      SD: 'South Dakota',
+      TN: 'Tennessee',
+      TX: 'Texas',
+      UT: 'Utah',
+      VT: 'Vermont',
+      VA: 'Virginia',
+      WA: 'Washington',
+      WV: 'West Virginia',
+      WI: 'Wisconsin',
+      WY: 'Wyoming',
+      AS: 'American Samoa',
+      DC: 'District of Columbia',
+      FM: 'Federated States of Micronesia',
+      GU: 'Guam',
+      MH: 'Marshall Islands',
+      MP: 'Northern Mariana Islands',
+      PW: 'Palau',
+      PR: 'Puerto Rico',
+      VI: 'Virgin Islands',
+    };
+
+    class Route {
+      constructor(path, layout, defaultRoute) {
+        this.path = path;
+        this.layout = layout;
+        this.default = defaultRoute;
+      }
+      isActiveRoute = function (hashedPath) {
+        const request = parseRequestURL();
+        const parsedURL =
+          (request.resource ? '/' + request.resource : '/') +
+          (request.id ? '/:id' : '') +
+          (request.verb ? '/' + request.verb : '');
+        return parsedURL === this.path;
+      };
+    }
+
+    class Router {
+      constructor(routes, rootElem) {
+        this.routes = routes;
+        this.rootElem = rootElem;
+        this.init();
+      }
+      init = function () {
+        var r = this.routes;
+        (function (scope, r) {
+          window.addEventListener('hashchange', function (e) {
+            scope.hasChanged(scope, r);
+          });
+        })(this, r);
+        this.hasChanged(this, r);
+      };
+      hasChanged = function (scope, r) {
+        // change location if url doesn't start with a hash
+        if (!location.href.startsWith(location.origin + '/#/')) {
+          location = window.location.origin + '/#' + location.pathname;
+        } else {
+          r.forEach((route) => {
+            if (route.isActiveRoute(window.location.hash.substr(1))) {
+              scope.render(route.layout);
+            }
+          });
         }
-        const previousValues = state.values;
-        let previousLength = previousValues.length;
-        state.values = args;
-        for (let i = 0; i < args.length; i++) {
-            // If we've rendered a higher-priority value already, stop.
-            if (i > state.lastRenderedIndex) {
-                break;
-            }
-            const value = args[i];
-            // Render non-Promise values immediately
-            if (isPrimitive(value) ||
-                typeof value.then !== 'function') {
-                part.setValue(value);
-                state.lastRenderedIndex = i;
-                // Since a lower-priority value will never overwrite a higher-priority
-                // synchronous value, we can stop processing now.
-                break;
-            }
-            // If this is a Promise we've already handled, skip it.
-            if (i < previousLength && value === previousValues[i]) {
-                continue;
-            }
-            // We have a Promise that we haven't seen before, so priorities may have
-            // changed. Forget what we rendered before.
-            state.lastRenderedIndex = _infinity;
-            previousLength = 0;
-            Promise.resolve(value).then((resolvedValue) => {
-                const index = state.values.indexOf(value);
-                // If state.values doesn't contain the value, we've re-rendered without
-                // the value, so don't render it. Then, only render if the value is
-                // higher-priority than what's already been rendered.
-                if (index > -1 && index < state.lastRenderedIndex) {
-                    state.lastRenderedIndex = index;
-                    part.setValue(resolvedValue);
-                    part.commit();
-                }
-            });
+      };
+      render = function (layout) {
+        scroll(0, 0);
+        render$1(layout.render(), this.rootElem);
+        if (layout.onMount) {
+          layout.onMount();
         }
-    });
+      };
+    }
+
+    class Page {
+      constructor(page, dataSource) {
+        this.page = page;
+        this.data = dataSource;
+      }
+      onMount() {}
+      render() {}
+    }
 
     var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
 
@@ -22091,6 +22153,459 @@
       chart.update();
     };
 
+    /**
+     * @license
+     * Copyright (c) 2017 The Polymer Project Authors. All rights reserved.
+     * This code may only be used under the BSD style license found at
+     * http://polymer.github.io/LICENSE.txt
+     * The complete set of authors may be found at
+     * http://polymer.github.io/AUTHORS.txt
+     * The complete set of contributors may be found at
+     * http://polymer.github.io/CONTRIBUTORS.txt
+     * Code distributed by Google as part of the polymer project is also
+     * subject to an additional IP rights grant found at
+     * http://polymer.github.io/PATENTS.txt
+     */
+    const _state = new WeakMap();
+    // Effectively infinity, but a SMI.
+    const _infinity = 0x7fffffff;
+    /**
+     * Renders one of a series of values, including Promises, to a Part.
+     *
+     * Values are rendered in priority order, with the first argument having the
+     * highest priority and the last argument having the lowest priority. If a
+     * value is a Promise, low-priority values will be rendered until it resolves.
+     *
+     * The priority of values can be used to create placeholder content for async
+     * data. For example, a Promise with pending content can be the first,
+     * highest-priority, argument, and a non_promise loading indicator template can
+     * be used as the second, lower-priority, argument. The loading indicator will
+     * render immediately, and the primary content will render when the Promise
+     * resolves.
+     *
+     * Example:
+     *
+     *     const content = fetch('./content.txt').then(r => r.text());
+     *     html`${until(content, html`<span>Loading...</span>`)}`
+     */
+    const until = directive((...args) => (part) => {
+        let state = _state.get(part);
+        if (state === undefined) {
+            state = {
+                lastRenderedIndex: _infinity,
+                values: [],
+            };
+            _state.set(part, state);
+        }
+        const previousValues = state.values;
+        let previousLength = previousValues.length;
+        state.values = args;
+        for (let i = 0; i < args.length; i++) {
+            // If we've rendered a higher-priority value already, stop.
+            if (i > state.lastRenderedIndex) {
+                break;
+            }
+            const value = args[i];
+            // Render non-Promise values immediately
+            if (isPrimitive(value) ||
+                typeof value.then !== 'function') {
+                part.setValue(value);
+                state.lastRenderedIndex = i;
+                // Since a lower-priority value will never overwrite a higher-priority
+                // synchronous value, we can stop processing now.
+                break;
+            }
+            // If this is a Promise we've already handled, skip it.
+            if (i < previousLength && value === previousValues[i]) {
+                continue;
+            }
+            // We have a Promise that we haven't seen before, so priorities may have
+            // changed. Forget what we rendered before.
+            state.lastRenderedIndex = _infinity;
+            previousLength = 0;
+            Promise.resolve(value).then((resolvedValue) => {
+                const index = state.values.indexOf(value);
+                // If state.values doesn't contain the value, we've re-rendered without
+                // the value, so don't render it. Then, only render if the value is
+                // higher-priority than what's already been rendered.
+                if (index > -1 && index < state.lastRenderedIndex) {
+                    state.lastRenderedIndex = index;
+                    part.setValue(resolvedValue);
+                    part.commit();
+                }
+            });
+        }
+    });
+
+    const lazyTable = (source, opts = {}) => {
+      const { headers = [], link = false, linkPrefix } = opts;
+
+      return html`<table class="table-auto">
+    <thead>
+      <tr>
+        ${headers.map((item) => html`<th class="px-4 py-2">${item}</th>`)}
+      </tr>
+    </thead>
+    <tbody>
+      ${until(
+        source.then((rows) =>
+          rows.map(
+            (cols) =>
+              html`<tr>
+                ${cols.map((col, i) => {
+                  if (link && i === 0) {
+                    const href =
+                      linkPrefix !== '' ? `${linkPrefix}/${col}` : `/${col}`;
+                    return html`<td class="border px-4 py-2">
+                      <a href="${href}" class="text-blue-500"
+                        >${statesAbv[col.toUpperCase()]}</a
+                      >
+                    </td>`;
+                  }
+                  return html`<td class="border px-4 py-2">${col}</td>`;
+                })}
+              </tr>`,
+          ),
+        ),
+        html`<tr>
+          <td class="border px-4 py-2">Loading</td>
+        </tr>`,
+      )}
+    </tbody>
+  </table>`;
+    };
+
+    const changeTemplate = (change) => {
+      let color = 'text-gray-500 text-sm';
+      let changeText = 'No change';
+      if (change > 0) {
+        color = 'text-green-400';
+        changeText = `${change}%`;
+      } else if (change < 0) {
+        color = 'text-red-400';
+        changeText = `${change}%`;
+      }
+      return html`<span
+    class="absolute ml-2 pb-1 text-base ${color}"
+    style="left:100%"
+    >${changeText}</span
+  >`;
+    };
+    const datapoint = (data, attribute) =>
+      html` <div class="flex justify-center py-4">
+    ${until(
+      data.then(({ current, previous }) => {
+        let change;
+        if (previous && previous[attribute]) {
+          change = percentChange(current[attribute], previous[attribute]);
+        }
+        return html`
+          <span
+            class="flex font-bold leading-none items-end justify-end text-4xl text-gray-700 relative"
+          >
+            ${numberWithCommas(current[attribute])} ${changeTemplate(change)}
+          </span>
+        `;
+      }),
+      html`<span>Loading...</span>`,
+    )}
+  </div>`;
+
+    const dataCard = ({ title, dataSource, attribute }) => html`
+  <div class="flex-grow w-full lg:w-3/12 mb-5 lg:mb-0 px-4">
+    <div class="bg-white p-2 shadow rounded">
+      <div>
+        <h4 class="text-gray-500 text-sm">${title}</h4>
+      </div>
+      ${datapoint(dataSource, attribute)}
+    </div>
+  </div>
+`;
+
+    const dataCards = (source, cards) => {
+      if (!cards) {
+        cards = [
+          {
+            title: 'Positive Cases',
+            dataSource: source,
+            attribute: 'positive',
+          },
+          {
+            title: 'Total Deaths',
+            dataSource: source,
+            attribute: 'death',
+          },
+          {
+            title: 'Current Hospitalized',
+            dataSource: source,
+            attribute: 'hospitalizedCurrently',
+          },
+        ];
+      }
+
+      return html`
+    <div class="flex flex-wrap justify-around -mx-4">
+      ${cards.map((card) => dataCard(card))}
+    </div>
+  `;
+    };
+
+    const logo = html`<a href="/#/"
+  ><h1 class="text-2xl text-primary-500">CV ⌚</h1></a
+>`;
+
+    const navbar = html`
+  <header>
+    <div class="container mx-auto flex items-center py-4 px-5 lg:px-0">
+      <div class="mr-10">${logo}</div>
+      <nav>
+        <ul>
+          <li>
+            <a href="/#/" class="text-blue-400 text-sm font-bold">Home</a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+`;
+
+    const positiveCasesLineChart = (options = {}) => {
+      const { title = 'Positive cases', subtitle = undefined } = options;
+      return html`<header class="mb-5">
+      ${title &&
+      html`<h3 class="font-bold text-xl text-gray-700">${title}</h3>`}
+      ${subtitle && html`<p class="text-gray-600">${subtitle}</p>`}
+    </header>
+    <canvas id="positive" width="400" height="400"></canvas>`;
+    };
+
+    const deathsLineChart = (options = {}) => {
+      const { title = 'Total Deaths', subtitle = undefined } = options;
+      return html`<header class="mb-5">
+      ${title &&
+      html`<h3 class="font-bold text-xl text-gray-700">${title}</h3>`}
+      ${subtitle && html`<p class="text-gray-600">${subtitle}</p>`}
+    </header>
+    <canvas id="deaths" width="400" height="400"></canvas>`;
+    };
+
+    const page = 'United States';
+
+    const headers = {
+      id: 'State',
+      positive: 'Positive',
+      negative: 'Negative',
+      recovered: 'Recovered',
+      hospitalized: 'Hospitalized',
+      death: 'Death',
+    };
+
+    const formatStatesTableData = (data) => {
+      const tableData = [];
+      data.forEach((row) => {
+        const attributes = Object.keys(headers);
+        const cols = [];
+        for (let [key, value] of Object.entries(row)) {
+          if (attributes.includes(key)) {
+            cols.push(value);
+          }
+        }
+        tableData.push(cols);
+      });
+      return tableData;
+    };
+    class Homepage extends Page {
+      onMount() {
+        this.data.usDaily().then((source) => {
+          const data = [...source.value].reverse();
+          lineChart(
+            'deaths',
+            this.data.getDataset(data, {
+              death: {
+                label: '# of deaths',
+                color: 'red',
+              },
+            }),
+            {
+              hideLabel: true,
+            },
+          );
+          lineChart(
+            'positive',
+            this.data.getDataset(data, {
+              positive: {
+                label: '# of positive cases',
+                color: 'blue',
+              },
+            }),
+            {
+              hideLabel: true,
+            },
+          );
+        });
+      }
+
+      render() {
+        const { title } = this.page;
+        const data = this.data.usDaily().then(({ value }) => {
+          return { current: value[0], previous: value[1] };
+        });
+
+        const statesTableData = this.data
+          .statesCurrent()
+          .then((results) => formatStatesTableData(results.value));
+        return html`
+      <div class="container mx-auto py-5 px-5 lg:px-0">
+        <h1 class="text-4xl lg:text-6xl text-primary-500">${title}</h1>
+        <h3 class="md:w-1/2 lg:w-4/12 text-gray-600">
+          Aggregating Covid-19 data from credible sources and presenting the
+          data in an easy to digest manner.
+        </h3>
+      </div>
+      <div class="container mx-auto pt-5 px-5 lg:px-0">
+        <h2 class="text-4xl lg:text-6xl text-gray-700 font-bold">
+          ${page}
+        </h2>
+      </div>
+      <div class="container mx-auto pb-5 px-5 lg:px-0 mb-5">
+        ${dataCards(data)}
+      </div>
+      <section>
+        <div class="container mb-10 px-5 lg:px-0 mx-auto ">
+          <div class="bg-white p-5 rounded shadow">
+            ${positiveCasesLineChart({ subtitle: `${page} daily cases` })}
+          </div>
+        </div>
+        <div class="container mb-10 px-5 lg:px-0 mx-auto ">
+          <div class="bg-white p-5 rounded shadow">
+            ${deathsLineChart()}
+          </div>
+        </div>
+      </section>
+      <section>
+        <div class="container mb-10 px-5 lg:px-0 mx-auto ">
+          <div class="bg-white p-5 rounded shadow">
+            <header class="mb-5">
+              <h3 class="font-bold text-xl text-gray-700">By State</h3>
+            </header>
+            <div class="overflow-x-scroll">
+              ${lazyTable(statesTableData, {
+                headers: Object.values(headers),
+                link: true,
+                linkPrefix: '/#/states',
+              })}
+            </div>
+          </div>
+        </div>
+      </section>
+    `;
+      }
+    }
+
+    function stateId() {
+      const request = parseRequestURL();
+      return request.id;
+    }
+    class State extends Page {
+      onMount() {
+        this.data.statesData(stateId()).then((source) => {
+          const data = [...source.value].reverse();
+          lineChart(
+            'deaths',
+            this.data.getDataset(data, {
+              death: {
+                label: '# of deaths',
+                color: 'red',
+              },
+            }),
+            {
+              hideLabel: true,
+            },
+          );
+          lineChart(
+            'positive',
+            this.data.getDataset(data, {
+              positive: {
+                label: '# of positive cases',
+                color: 'blue',
+              },
+            }),
+            {
+              hideLabel: true,
+            },
+          );
+        });
+      }
+
+      render() {
+        const currentData = this.data.statesData(stateId()).then(({ value }) => {
+          return { current: value[0], previous: value[1] };
+        });
+        const state = statesAbv[stateId().toUpperCase()];
+
+        return html`
+      ${navbar}
+      <div class="container mx-auto pt-5 px-5 lg:px-0">
+        <h1 class="text-4xl lg:text-6xl text-gray-700 font-bold">
+          ${state}
+        </h1>
+      </div>
+      <div class="container mx-auto pb-5 px-5 lg:px-0 mb-5">
+        ${dataCards(currentData)}
+      </div>
+      <section>
+        <div class="container mb-10 px-5 lg:px-0 mx-auto ">
+          <div class="bg-white p-5 rounded shadow">
+            ${positiveCasesLineChart({ subtitle: `${state} daily cases` })}
+          </div>
+        </div>
+        <div class="container mb-10 px-5 lg:px-0 mx-auto ">
+          <div class="bg-white p-5 rounded shadow">
+            ${deathsLineChart()}
+          </div>
+        </div>
+      </section>
+    `;
+      }
+    }
+
+    class App {
+      constructor(rootElem, config) {
+        const { title = '', dataSource } = config;
+        this.rootElem = rootElem;
+        this.title = title;
+        this.dataSource = dataSource;
+        this.init();
+      }
+      init() {
+        const r = new Router(
+          [
+            new Route(
+              '/',
+              new Homepage(
+                {
+                  title: this.title,
+                },
+                this.dataSource,
+              ),
+              true,
+            ),
+            new Route(
+              '/states/:id',
+              new State(
+                {
+                  title: 'States Daily Info',
+                },
+                this.dataSource,
+              ),
+            ),
+          ],
+          this.rootElem,
+        );
+        this.router = r;
+      }
+    }
+
     function toInteger(dirtyNumber) {
       if (dirtyNumber === null || dirtyNumber === true || dirtyNumber === false) {
         return NaN;
@@ -26567,12 +27082,238 @@
       return input.match(escapedStringRegExp$1)[1].replace(doubleQuoteRegExp$1, "'");
     }
 
-    const defaults = {
-      appTitle: '',
+    const get = async function (url = '') {
+      try {
+        // Default options are marked with *
+        const response = await fetch(url, {
+          method: 'GET',
+        });
+        return response.json(); // parses JSON response into native JavaScript objects
+      } catch (error) {
+        return error;
+      }
     };
-    class App {
-      constructor(config) {
-        this.config = { ...defaults, ...config };
+
+    const ctpApi = 'https://covidtracking.com/api';
+    class CovidTrackingProject {
+      // loadFile(fileName) {
+      // parseCSV(`/static/data/covid_tracking_project/${fileName}`)
+      // }
+
+      async fetchStatesCurrentValues() {
+        try {
+          return formatCovidTrackingProjectStateData(
+            await get(`${ctpApi}/v1/states/current.json`),
+          );
+        } catch (e) {
+          return e;
+        }
+      }
+      async fetchStatesHistoricData() {
+        try {
+          return formatCovidTrackingProjectStateData(
+            await get(`${ctpApi}/v1/states/daily.json`),
+          );
+        } catch (e) {
+          return e;
+        }
+      }
+      async fetchStatesInformation() {
+        try {
+          return formatCovidTrackingProjectStateData(
+            await get(`${ctpApi}/v1/states/info.json`),
+          );
+        } catch (e) {
+          return e;
+        }
+      }
+      async fetchUSCurrentValues() {
+        return await get(`${ctpApi}/v1/us/current.json`);
+      }
+      async fetchUSHistoricData() {
+        return await get(`${ctpApi}/us/daily`);
+      }
+      async fetchCounties() {
+        return await get(`${ctpApi}/counties`);
+      }
+    }
+
+    const formatCovidTrackingProjectStateData = (data) => {
+      const stateData = [];
+      if (Array.isArray(data)) {
+        data.forEach((value) => {
+          const stateDatapoint = {
+            id: value.state.toLowerCase(),
+            date: value.dateChecked,
+            death: value.death,
+            hospitalized: value.hospitalized,
+            hospitalizedCurrently: value.hospitalizedCurrently,
+            negative: value.negative,
+            positive: value.positive,
+            recovered: value.recovered,
+            total: value.totalTestResults,
+          };
+          stateData.push(stateDatapoint);
+        });
+      }
+      return stateData;
+    };
+
+    /**
+     * A data object data array or object and it's last updated timestamp.
+     * @typedef {Object} Data
+     * @property {Array<Object[]>|Object} value store.
+     * @property {string} lastUpdated string timestamp.
+     */
+    const data = {
+      value: undefined,
+      lastUpdated: undefined,
+    };
+    /**
+     * A cache object that stores data.
+     * @typedef {Object} Cache
+     * @property {Data} us stores the US data.
+     * @property {Object} states stores the us states cache.
+     */
+    const cache = {
+      us: data,
+      states: {
+        all: data,
+        current: data,
+        // add state key
+        // ex. states['AK'] = data
+      },
+    };
+
+    /**
+     * Data creates a new data source to be used to cache or fetch data from it's sources
+     *
+     * @class Data
+     */
+    class Data {
+      /**
+       * Creates an instance of Data.
+       * @param {string} defaultSource
+       * @memberof Data
+       */
+      constructor(defaultSource) {
+        this.source = defaultSource ? defaultSource : 'covidTrackingProject';
+        this.cache = {
+          covidTrackingProject: cache,
+        };
+      }
+      changeSource(source) {
+        this.source = source;
+      }
+
+      /**
+       * us daily gets the current US daily data
+       *
+       * @param {boolean} [refresh=false] skip cache check and check for new data
+       * @returns {Data} data object containing the results of the fetch
+       * @memberof Data
+       */
+      async usDaily(refresh = false) {
+        try {
+          if (!refresh) {
+            const cache = this.cache[this.source];
+            if (cache.us && cache.us.value && cache.us.value.length > 0) {
+              return cache.us;
+            }
+          }
+
+          let results;
+          if (this.source === 'covidTrackingProject') {
+            const source = new CovidTrackingProject();
+            results = await source.fetchUSHistoricData();
+          }
+
+          const data = {
+            value: results,
+            lastUpdated: new Date(),
+          };
+          this.cache[this.source].us = data;
+          return data;
+        } catch (e) {
+          console.log('error fetching us daily', e);
+          throw 'could not fetch us daily data';
+        }
+      }
+
+      async statesData(stateId = 'all', refresh = false) {
+        try {
+          let cache;
+          if (!refresh) {
+            cache = this.cache[this.source].states;
+            if (cache && cache[stateId] && cache[stateId].value) {
+              return cache[stateId];
+            }
+          }
+
+          let states;
+          if (stateId != 'all' && cache && cache.all.value) {
+            states = cache.all.value;
+          } else {
+            if (this.source === 'covidTrackingProject') {
+              const source = new CovidTrackingProject();
+              states = await source.fetchStatesHistoricData('all');
+            }
+          }
+
+          let results;
+          if (stateId != 'all') {
+            if (Array.isArray(results)) {
+              results.forEach();
+            }
+            results = states.filter((row) => row.id === stateId);
+          } else {
+            results = states;
+          }
+
+          const data = {
+            value: results,
+            lastUpdated: new Date(),
+          };
+          this.cache[this.source].states[stateId] = data;
+          return data;
+        } catch (e) {
+          console.log('error fetching statesData', e);
+          throw 'could not fetch states data';
+        }
+      }
+      /**
+       * us daily gets the current US daily data
+       *
+       * @param {boolean} [refresh=false] skip cache check and check for new data
+       * @returns {Data} data object containing the results of the fetch
+       * @memberof Data
+       */
+      async statesCurrent(refresh = false) {
+        try {
+          let cache;
+          if (!refresh) {
+            cache = this.cache[this.source].states;
+            if (cache && cache.current && cache.current.value) {
+              return cache.current;
+            }
+          }
+
+          let results;
+          if (this.source === 'covidTrackingProject') {
+            const source = new CovidTrackingProject();
+            results = await source.fetchStatesCurrentValues();
+          }
+
+          const data = {
+            value: results,
+            lastUpdated: new Date(),
+          };
+          this.cache[this.source].states.current = data;
+          return data;
+        } catch (e) {
+          console.log('error fetching us daily', e);
+          throw 'could not fetch us daily data';
+        }
       }
 
       getDataset(source, datapoints = {}) {
@@ -26586,10 +27327,17 @@
           const data = [];
           source.forEach((value) => {
             if (value['date']) {
-              const date = format(
-                parse(value['date'], 'yyyyMMdd', new Date()),
-                'MM/dd/yyyy',
-              );
+              // todo this cleaner
+              let date;
+              if (value.date.length > 10) {
+                date = format(new Date(value.date), 'MM/dd/yyyy');
+              } else {
+                date = format(
+                  parse(value['date'], 'yyyyMMdd', new Date()),
+                  'MM/dd/yyyy',
+                );
+              }
+
               labels.push(date);
             }
             if (value[datapoint]) {
@@ -26601,448 +27349,18 @@
 
         return results;
       }
-      onMount() {}
-      render() {}
     }
 
-    const lazyTable = (source, opts = {}) => {
-      const { headers = [], link = false, linkPrefix } = opts;
-
-      return html`<table class="table-auto">
-    <thead>
-      <tr>
-        ${headers.map((item) => html`<th class="px-4 py-2">${item}</th>`)}
-      </tr>
-    </thead>
-    <tbody>
-      ${until(
-        source.then((rows) =>
-          rows.map(
-            (cols) =>
-              html`<tr>
-                ${cols.map((col, i) => {
-                  if (link && i === 0) {
-                    const href =
-                      linkPrefix !== '' ? `${linkPrefix}/${col}` : `/${col}`;
-                    return html`<td class="border px-4 py-2">
-                      <a href="${href}" class="text-blue-500">${col}</a>
-                    </td>`;
-                  }
-                  return html`<td class="border px-4 py-2">${col}</td>`;
-                })}
-              </tr>`,
-          ),
-        ),
-        html`<tr>
-          <td class="border px-4 py-2">Loading</td>
-        </tr>`,
-      )}
-    </tbody>
-  </table>`;
-    };
-
-    function numberWithCommas(number) {
-      return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-    }
-    const percentChange = (newValue, oldValue) => {
-      let change = (newValue - oldValue) / oldValue;
-      return (change * 100).toFixed(2);
-    };
-
-    const statesAbv = {
-      AL: 'Alabama',
-      AK: 'Alaska',
-      AZ: 'Arizona',
-      AR: 'Arkansas',
-      CA: 'California',
-      CO: 'Colorado',
-      CT: 'Connecticut',
-      DE: 'Delaware',
-      FL: 'Florida',
-      GA: 'Georgia',
-      HI: 'Hawaii',
-      ID: 'Idaho',
-      IL: 'Illinois',
-      IN: 'Indiana',
-      IA: 'Iowa',
-      KS: 'Kansas',
-      KY: 'Kentucky',
-      LA: 'Louisiana',
-      ME: 'Maine',
-      MD: 'Maryland',
-      MA: 'Massachusetts',
-      MI: 'Michigan',
-      MN: 'Minnesota',
-      MS: 'Mississippi',
-      MO: 'Missouri',
-      MT: 'Montana',
-      NE: 'Nebraska',
-      NV: 'Nevada',
-      NH: 'New Hampshire',
-      NJ: 'New Jersey',
-      NM: 'New Mexico',
-      NY: 'New York',
-      NC: 'North Carolina',
-      ND: 'North Dakota',
-      OH: 'Ohio',
-      OK: 'Oklahoma',
-      OR: 'Oregon',
-      PA: 'Pennsylvania',
-      RI: 'Rhode Island',
-      SC: 'South Carolina',
-      SD: 'South Dakota',
-      TN: 'Tennessee',
-      TX: 'Texas',
-      UT: 'Utah',
-      VT: 'Vermont',
-      VA: 'Virginia',
-      WA: 'Washington',
-      WV: 'West Virginia',
-      WI: 'Wisconsin',
-      WY: 'Wyoming',
-      AS: 'American Samoa',
-      DC: 'District of Columbia',
-      FM: 'Federated States of Micronesia',
-      GU: 'Guam',
-      MH: 'Marshall Islands',
-      MP: 'Northern Mariana Islands',
-      PW: 'Palau',
-      PR: 'Puerto Rico',
-      VI: 'Virgin Islands',
-    };
-
-    const changeTemplate = (change) => {
-      let color = 'text-gray-500 text-sm';
-      let changeText = 'No change';
-      if (change > 0) {
-        color = 'text-green-400';
-        changeText = `${change}%`;
-      } else if (change < 0) {
-        color = 'text-red-400';
-        changeText = `${change}%`;
-      }
-      return html`<span
-    class="absolute ml-2 pb-1 text-base ${color}"
-    style="left:100%"
-    >${changeText}</span
-  >`;
-    };
-    const datapoint = (data, attribute) =>
-      html` <div class="flex justify-center py-4">
-    ${until(
-      data.then(({ current, previous }) => {
-        let change;
-        if (previous && previous[attribute]) {
-          change = percentChange(current[attribute], previous[attribute]);
-        }
-        return html`
-          <span
-            class="flex font-bold leading-none items-end justify-end text-4xl text-gray-700 relative"
-          >
-            ${numberWithCommas(current[attribute])} ${changeTemplate(change)}
-          </span>
-        `;
-      }),
-      html`<span>Loading...</span>`,
-    )}
-  </div>`;
-
-    const dataCard = ({ title, dataSource, attribute }) => html`
-  <div class="flex-grow w-full lg:w-3/12 mb-5 lg:mb-0 px-4">
-    <div class="bg-white p-2 shadow rounded">
-      <div>
-        <h4 class="text-gray-500 text-sm">${title}</h4>
-      </div>
-      ${datapoint(dataSource, attribute)}
-    </div>
-  </div>
-`;
-
-    const dataCards = (source, cards) => {
-      if (!cards) {
-        cards = [
-          {
-            title: 'Positive Cases',
-            dataSource: source,
-            attribute: 'positive',
-          },
-          {
-            title: 'Total Deaths',
-            dataSource: source,
-            attribute: 'death',
-          },
-          {
-            title: 'Current Hospitalized',
-            dataSource: source,
-            attribute: 'hospitalized',
-          },
-        ];
-      }
-
-      return html`<div class="container mx-auto py-5 px-5 lg:px-0 mb-5">
-    <div class="flex flex-wrap justify-around -mx-4">
-      ${cards.map((card) => dataCard(card))}
-    </div>
-  </div>`;
-    };
-
-    const logo = html`<a href="/"
-  ><h1 class="text-2xl text-primary-500">CV ⌚</h1></a
->`;
-
-    const navbar = html`
-  <header>
-    <div class="container mx-auto flex items-center py-4">
-      <div class="mr-10">${logo}</div>
-      <nav>
-        <ul>
-          <li><a href="/" class="text-blue-400 text-sm font-bold">Home</a></li>
-        </ul>
-      </nav>
-    </div>
-  </header>
-`;
-
-    var loadData = (file) =>
-      new Promise(async (resolve, reject) => {
-        try {
-          await Papa.parse(`/static/data/${file}`, {
-            header: true,
-            download: true,
-            complete: function (results) {
-              resolve(results);
-            },
-          });
-        } catch (e) {
-          reject(e);
-        }
-      });
-
-    const page = 'United States';
-
-    const mainData = loadData('covid_tracking_project/us-daily.csv').then(
-      (results) => results.data,
-    );
-
-    const headers = {
-      state: 'State',
-      positive: 'Positive',
-      negative: 'Negative',
-      recovered: 'Recovered',
-      hospitalized: 'Hospitalized',
-      death: 'Death',
-    };
-    const statesTableData = loadData(
-      'covid_tracking_project/states-current.csv',
-    ).then((results) => {
-      const tableData = [];
-      results.data.forEach((row) => {
-        const attributes = Object.keys(headers);
-        const cols = [];
-        for (let [key, value] of Object.entries(row)) {
-          if (attributes.includes(key)) {
-            cols.push(value);
-          }
-        }
-        tableData.push(cols);
-      });
-      return tableData;
-    });
-    class Homepage extends App {
-      onMount() {
-        mainData.then((data) => {
-          data.reverse();
-          lineChart(
-            'deaths',
-            this.getDataset(data, {
-              death: {
-                label: '# of deaths',
-                color: 'red',
-              },
-            }),
-            {
-              hideLabel: true,
-            },
-          );
-          lineChart(
-            'positive',
-            this.getDataset(data, {
-              positive: {
-                label: '# of positive cases',
-                color: 'blue',
-              },
-            }),
-            {
-              hideLabel: true,
-            },
-          );
-        });
-      }
-
-      render() {
-        const { appTitle } = this.config;
-        const data = mainData.then((results) => {
-          return { current: results[0], previous: results[1] };
-        });
-        return html`
-      <div class="container mx-auto py-5 px-5 lg:px-0">
-        <h1 class="text-6xl text-primary-500">${appTitle}</h1>
-        <h3 class="md:w-1/2 lg:w-4/12 text-gray-600">
-          Aggregating Covid-19 data from credible sources and presenting the
-          data in an easy to digest manner.
-        </h3>
-      </div>
-      <div class="container mx-auto pt-5 px-5 lg:px-0">
-        <h2 class="text-6xl text-gray-700 font-bold">
-          ${page}
-        </h2>
-      </div>
-      <div class="container mx-auto pb-5 px-5 lg:px-0 mb-5">
-        ${dataCards(data)}
-      </div>
-      <section>
-        <div class="container bg-white mb-10 mx-auto p-5 rounded shadow">
-          <header class="mb-5">
-            <h3 class="font-bold text-xl text-gray-700">Positive cases</h3>
-            <p class="text-gray-600">${page} daily cases</p>
-          </header>
-          <canvas id="positive" width="400" height="400"></canvas>
-        </div>
-        <div class="container bg-white mb-10 mx-auto p-5 rounded shadow">
-          <header class="mb-5">
-            <h3 class="font-bold text-xl text-gray-700">Total Deaths</h3>
-          </header>
-          <canvas id="deaths" width="400" height="400"></canvas>
-        </div>
-      </section>
-      <section>
-        <div class="container bg-white mb-10 mx-auto p-5 rounded shadow">
-          <header class="mb-5">
-            <h3 class="font-bold text-xl text-gray-700">By State</h3>
-          </header>
-          ${lazyTable(statesTableData, {
-            headers: Object.values(headers),
-            link: true,
-            linkPrefix: '/states',
-          })}
-        </div>
-      </section>
-    `;
-      }
-    }
-
-    const url = new URL(window.location.href);
-    const stateCode = url.pathname.substr(8, 2);
-
-    const stateData = loadData('covid_tracking_project/states-daily.csv').then(
-      (results) => {
-        if (results.data) {
-          return results.data.filter((row) => row.state === stateCode);
-        }
-      },
-    );
-    class State extends App {
-      onMount() {
-        stateData.then((data) => {
-          data.reverse();
-          lineChart(
-            'deaths',
-            this.getDataset(data, {
-              death: {
-                label: '# of deaths',
-                color: 'red',
-              },
-            }),
-            {
-              hideLabel: true,
-            },
-          );
-          lineChart(
-            'positive',
-            this.getDataset(data, {
-              positive: {
-                label: '# of positive cases',
-                color: 'blue',
-              },
-            }),
-            {
-              hideLabel: true,
-            },
-          );
-        });
-      }
-
-      render() {
-        const currentData = stateData.then((results) => {
-          return { current: results[0], previous: results[1] };
-        });
-
-        return html`
-      ${navbar}
-      <div class="container mx-auto pt-5 px-5 lg:px-0">
-        <h1 class="text-6xl text-gray-700 font-bold">
-          ${statesAbv[stateCode]}
-        </h1>
-      </div>
-      <div class="container mx-auto pb-5 px-5 lg:px-0 mb-5">
-        ${dataCards(currentData)}
-      </div>
-      <section>
-        <div class="container bg-white mb-10 mx-auto p-5 rounded shadow">
-          <header class="mb-5">
-            <h3 class="font-bold text-xl text-gray-700">Positive cases</h3>
-            <p class="text-gray-600">United States daily cases</p>
-          </header>
-          <canvas id="positive" width="400" height="400"></canvas>
-        </div>
-        <div class="container bg-white mb-10 mx-auto p-5 rounded shadow">
-          <header class="mb-5">
-            <h3 class="font-bold text-xl text-gray-700">Total Deaths</h3>
-            <p class="text-gray-600">United States daily cases</p>
-          </header>
-          <canvas id="deaths" width="400" height="400"></canvas>
-        </div>
-      </section>
-    `;
-      }
-    }
-
-    class NotFound extends App {
-      render() {
-        return html` <div class="container mx-auto">
-      <h1 class="text-2xl text-primary-500">404 not found</h1>
-    </div>`;
-      }
-    }
-
-    const router = (config = {}) => {
-      const url = new URL(window.location.href);
-      switch (true) {
-        case url.pathname === '' || url.pathname === '/':
-          return new Homepage(config);
-        case url.pathname.startsWith('/states/'):
-          return new State(config);
-        default:
-          return new NotFound();
-      }
-    };
-
-    const render$1 = (element, component) => {
-      // const [layout, onMount] = route;
-      render(component.render(), element);
-      if (component.onMount) {
-        component.onMount();
-      }
-    };
+    const dataSource = new Data();
 
     const appConfig = {
       title: 'CV ⌚',
+      dataSource,
     };
 
-    document.addEventListener('DOMContentLoaded', () => {
-      const app = document.getElementById('root');
-      const component = router(appConfig);
-      render$1(app, component);
+    window.addEventListener('load', () => {
+      const root = document.getElementById('root');
+      new App(root, appConfig);
     });
 
 }());

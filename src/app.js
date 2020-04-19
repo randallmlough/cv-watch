@@ -1,39 +1,42 @@
-import { format, parse } from 'date-fns';
+import Router, { Route } from './router';
+import { MainPage, NotFound, StatesPage } from './pages';
 
 const defaults = {
   appTitle: '',
 };
 export default class App {
-  constructor(config) {
-    this.config = { ...defaults, ...config };
+  constructor(rootElem, config) {
+    const { title = '', dataSource } = config;
+    this.rootElem = rootElem;
+    this.title = title;
+    this.dataSource = dataSource;
+    this.init();
   }
-
-  getDataset(source, datapoints = {}) {
-    if (!source) {
-      return null;
-    }
-
-    const labels = [];
-    const results = [];
-    for (let [datapoint, options] of Object.entries(datapoints)) {
-      const data = [];
-      source.forEach((value) => {
-        if (value['date']) {
-          const date = format(
-            parse(value['date'], 'yyyyMMdd', new Date()),
-            'MM/dd/yyyy',
-          );
-          labels.push(date);
-        }
-        if (value[datapoint]) {
-          data.push(value[datapoint]);
-        }
-      });
-      results.push({ data, options, labels });
-    }
-
-    return results;
+  init() {
+    const r = new Router(
+      [
+        new Route(
+          '/',
+          new MainPage(
+            {
+              title: this.title,
+            },
+            this.dataSource,
+          ),
+          true,
+        ),
+        new Route(
+          '/states/:id',
+          new StatesPage(
+            {
+              title: 'States Daily Info',
+            },
+            this.dataSource,
+          ),
+        ),
+      ],
+      this.rootElem,
+    );
+    this.router = r;
   }
-  onMount() {}
-  render() {}
 }

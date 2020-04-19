@@ -22500,7 +22500,7 @@
             this.data.getDataset(data, {
               positiveIncrease: {
                 label: '# of positive cases',
-                color: 'red',
+                color: 'teal',
               },
             }),
             {
@@ -22621,7 +22621,7 @@
             this.data.getDataset(data, {
               positiveIncrease: {
                 label: '# of positive cases',
-                color: 'red',
+                color: 'teal',
               },
             }),
             {

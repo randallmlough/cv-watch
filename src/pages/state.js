@@ -31,7 +31,7 @@ export default class State extends Page {
         this.data.getDataset(data, {
           positiveIncrease: {
             label: '# of positive cases',
-            color: 'red',
+            color: 'teal',
           },
         }),
         {

@@ -161,7 +161,6 @@ export default class Data {
     if (!source) {
       return null;
     }
-
     const labels = [];
     const results = [];
     for (let [datapoint, options] of Object.entries(datapoints)) {

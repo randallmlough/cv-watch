@@ -22342,24 +22342,14 @@
   </header>
 `;
 
-    const positiveCasesLineChart = (options = {}) => {
-      const { title = 'Positive cases', subtitle = undefined } = options;
+    const chart = (options = {}) => {
+      const { id = undefined, title = undefined, subtitle = undefined } = options;
       return html`<header class="mb-5">
       ${title &&
       html`<h3 class="font-bold text-xl text-gray-700">${title}</h3>`}
       ${subtitle && html`<p class="text-gray-600">${subtitle}</p>`}
     </header>
-    <canvas id="positive" width="400" height="400"></canvas>`;
-    };
-
-    const deathsLineChart = (options = {}) => {
-      const { title = 'Total Deaths', subtitle = undefined } = options;
-      return html`<header class="mb-5">
-      ${title &&
-      html`<h3 class="font-bold text-xl text-gray-700">${title}</h3>`}
-      ${subtitle && html`<p class="text-gray-600">${subtitle}</p>`}
-    </header>
-    <canvas id="deaths" width="400" height="400"></canvas>`;
+    <canvas id="${id}" width="400" height="400"></canvas>`;
     };
 
     const headers = {
@@ -22412,7 +22402,7 @@
               html`<tr>
                 ${cols.map((col, i) => {
                   if (i === 0) {
-                    const href = `/states/${col}`;
+                    const href = `/#/states/${col}`;
                     return html`<td class="border px-4 py-2">
                       <a href="${href}" class="text-blue-500"
                         >${statesAbv[col.toUpperCase()]}</a
@@ -22433,6 +22423,60 @@
   </table>`;
     };
 
+    const barChart = async (ctx, datapoints = [], opts = {}) => {
+      const { hideLabel = false } = opts;
+      let el;
+      if (typeof ctx === 'string') {
+        el = document.getElementById(ctx);
+      }
+      const chart = new Chart(el, {
+        type: 'bar',
+        data: {},
+        options: {
+          responsive: true,
+          legend: {
+            display: !hideLabel,
+          },
+          tooltips: {
+            mode: 'index',
+            intersect: false,
+          },
+          hover: {
+            mode: 'nearest',
+            intersect: true,
+          },
+          scales: {
+            x: {
+              display: true,
+              scaleLabel: {
+                display: true,
+                labelString: 'Month',
+              },
+            },
+            y: {
+              display: true,
+              scaleLabel: {
+                display: true,
+                labelString: 'Value',
+              },
+            },
+          },
+        },
+      });
+
+      datapoints.forEach(({ data, options, labels }, i) => {
+        chart.data.labels = labels;
+        chart.data.datasets[i] = {
+          label: options.label,
+          data: data,
+          borderWidth: 1,
+          hoverBorderWidth: 1,
+          ...datasetColorGenerator(options.color),
+        };
+      });
+      chart.update();
+    };
+
     const page = 'United States';
 
     class Homepage extends Page {
@@ -22444,6 +22488,18 @@
             this.data.getDataset(data, {
               death: {
                 label: '# of deaths',
+                color: 'red',
+              },
+            }),
+            {
+              hideLabel: true,
+            },
+          );
+          barChart(
+            'pos-bar',
+            this.data.getDataset(data, {
+              positiveIncrease: {
+                label: '# of positive cases',
                 color: 'red',
               },
             }),
@@ -22471,7 +22527,7 @@
         const data = this.data.usDaily().then(({ value }) => {
           return { current: value[0], previous: value[1] };
         });
-
+        const historicData = this.data.hi;
         const statesTableData = this.data
           .statesCurrent()
           .then((results) => results.value);
@@ -22493,13 +22549,34 @@
       </div>
       <section>
         <div class="container mb-10 px-5 lg:px-0 mx-auto ">
-          <div class="bg-white p-5 rounded shadow">
-            ${positiveCasesLineChart({ subtitle: `${page} daily cases` })}
+          <div class="flex flex-wrap -mx-4">
+            <div class="w-full lg:w-1/2 px-4">
+              <div class="h-full bg-white p-5 rounded shadow">
+                ${chart({
+                  id: 'positive',
+                  title: 'Total positive cases',
+                  subtitle: `${page}`,
+                })}
+              </div>
+            </div>
+            <div class="w-full lg:w-1/2 px-4">
+              <div class="h-full bg-white p-5 rounded shadow">
+                ${chart({
+                  id: 'pos-bar',
+                  title: 'Daily positive cases',
+                  subtitle: `${page}`,
+                })}
+              </div>
+            </div>
           </div>
         </div>
         <div class="container mb-10 px-5 lg:px-0 mx-auto ">
           <div class="bg-white p-5 rounded shadow">
-            ${deathsLineChart()}
+            ${chart({
+              id: 'deaths',
+              title: 'Total deaths',
+              subtitle: `${page}`,
+            })}
           </div>
         </div>
       </section>
@@ -22532,6 +22609,18 @@
             this.data.getDataset(data, {
               death: {
                 label: '# of deaths',
+                color: 'red',
+              },
+            }),
+            {
+              hideLabel: true,
+            },
+          );
+          barChart(
+            'pos-bar',
+            this.data.getDataset(data, {
+              positiveIncrease: {
+                label: '# of positive cases',
                 color: 'red',
               },
             }),
@@ -22593,13 +22682,34 @@
       </div>
       <section>
         <div class="container mb-10 px-5 lg:px-0 mx-auto ">
-          <div class="bg-white p-5 rounded shadow">
-            ${positiveCasesLineChart({ subtitle: `${state} daily cases` })}
+          <div class="flex flex-wrap -mx-4">
+            <div class="w-full lg:w-1/2 px-4">
+              <div class="h-full bg-white p-5 rounded shadow">
+                ${chart({
+                  id: 'positive',
+                  title: 'Total positive cases',
+                  subtitle: `${state}`,
+                })}
+              </div>
+            </div>
+            <div class="w-full lg:w-1/2 px-4">
+              <div class="h-full bg-white p-5 rounded shadow">
+                ${chart({
+                  id: 'pos-bar',
+                  title: 'Daily positive cases',
+                  subtitle: `${state}`,
+                })}
+              </div>
+            </div>
           </div>
         </div>
         <div class="container mb-10 px-5 lg:px-0 mx-auto ">
           <div class="bg-white p-5 rounded shadow">
-            ${deathsLineChart()}
+            ${chart({
+              id: 'deaths',
+              title: 'Total deaths',
+              subtitle: `${state}`,
+            })}
           </div>
         </div>
       </section>
@@ -27188,6 +27298,7 @@
             hospitalizedCurrently: value.hospitalizedCurrently,
             negative: value.negative,
             positive: value.positive,
+            positiveIncrease: value.positiveIncrease,
             recovered: value.recovered,
             total: value.totalTestResults,
           };
@@ -27358,7 +27469,6 @@
         if (!source) {
           return null;
         }
-
         const labels = [];
         const results = [];
         for (let [datapoint, options] of Object.entries(datapoints)) {

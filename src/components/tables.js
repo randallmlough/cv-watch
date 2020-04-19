@@ -12,7 +12,6 @@ export const row = (cols = []) =>
   </tr>`;
 
 export const table = (headers = [], rows = []) => {
-  debugger;
   return html`<table class="table-auto">
     <thead>
       <tr>

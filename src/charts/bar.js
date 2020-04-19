@@ -1,6 +1,5 @@
 import Chart from 'chart.js';
-import { cssVar } from '../util/styles';
-
+import { datasetColorGenerator } from '../util/styles';
 /**
  * @typedef {Object} Data The Options to use in the function createElement.
  * @property {number} data the value of the data point
@@ -54,9 +53,8 @@ const toChartData = (data = [{}], opts = {}) => {
  *
  * @param {*} ctx
  */
-const barChart = (ctx, data, opts = {}) => {
+const barChartOld = (ctx, data, opts = {}) => {
   const { label = undefined } = opts;
-
   return new Chart(ctx, {
     type: 'bar',
     data: toChartData(data, { label }),
@@ -75,6 +73,60 @@ const barChart = (ctx, data, opts = {}) => {
       },
     },
   });
+};
+
+const barChart = async (ctx, datapoints = [], opts = {}) => {
+  const { hideLabel = false } = opts;
+  let el;
+  if (typeof ctx === 'string') {
+    el = document.getElementById(ctx);
+  }
+  const chart = new Chart(el, {
+    type: 'bar',
+    data: {},
+    options: {
+      responsive: true,
+      legend: {
+        display: !hideLabel,
+      },
+      tooltips: {
+        mode: 'index',
+        intersect: false,
+      },
+      hover: {
+        mode: 'nearest',
+        intersect: true,
+      },
+      scales: {
+        x: {
+          display: true,
+          scaleLabel: {
+            display: true,
+            labelString: 'Month',
+          },
+        },
+        y: {
+          display: true,
+          scaleLabel: {
+            display: true,
+            labelString: 'Value',
+          },
+        },
+      },
+    },
+  });
+
+  datapoints.forEach(({ data, options, labels }, i) => {
+    chart.data.labels = labels;
+    chart.data.datasets[i] = {
+      label: options.label,
+      data: data,
+      borderWidth: 1,
+      hoverBorderWidth: 1,
+      ...datasetColorGenerator(options.color),
+    };
+  });
+  chart.update();
 };
 
 export default barChart;

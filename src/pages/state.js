@@ -3,7 +3,8 @@ import { html } from 'lit-html';
 import lineChart from '../charts/line';
 import { dataCards, navbar } from '../components';
 import { parseRequestURL, statesAbv } from '../util';
-import { positiveCasesLineChart, deathsLineChart } from '../components/chart';
+import chart from '../components/chart';
+import barChart from '../charts/bar';
 
 function stateId() {
   const request = parseRequestURL();
@@ -18,6 +19,18 @@ export default class State extends Page {
         this.data.getDataset(data, {
           death: {
             label: '# of deaths',
+            color: 'red',
+          },
+        }),
+        {
+          hideLabel: true,
+        },
+      );
+      barChart(
+        'pos-bar',
+        this.data.getDataset(data, {
+          positiveIncrease: {
+            label: '# of positive cases',
             color: 'red',
           },
         }),
@@ -79,13 +92,34 @@ export default class State extends Page {
       </div>
       <section>
         <div class="container mb-10 px-5 lg:px-0 mx-auto ">
-          <div class="bg-white p-5 rounded shadow">
-            ${positiveCasesLineChart({ subtitle: `${state} daily cases` })}
+          <div class="flex flex-wrap -mx-4">
+            <div class="w-full lg:w-1/2 px-4">
+              <div class="h-full bg-white p-5 rounded shadow">
+                ${chart({
+                  id: 'positive',
+                  title: 'Total positive cases',
+                  subtitle: `${state}`,
+                })}
+              </div>
+            </div>
+            <div class="w-full lg:w-1/2 px-4">
+              <div class="h-full bg-white p-5 rounded shadow">
+                ${chart({
+                  id: 'pos-bar',
+                  title: 'Daily positive cases',
+                  subtitle: `${state}`,
+                })}
+              </div>
+            </div>
           </div>
         </div>
         <div class="container mb-10 px-5 lg:px-0 mx-auto ">
           <div class="bg-white p-5 rounded shadow">
-            ${deathsLineChart()}
+            ${chart({
+              id: 'deaths',
+              title: 'Total deaths',
+              subtitle: `${state}`,
+            })}
           </div>
         </div>
       </section>

@@ -66,6 +66,7 @@ const formatCovidTrackingProjectStateData = (data) => {
         hospitalizedCurrently: value.hospitalizedCurrently,
         negative: value.negative,
         positive: value.positive,
+        positiveIncrease: value.positiveIncrease,
         recovered: value.recovered,
         total: value.totalTestResults,
       };

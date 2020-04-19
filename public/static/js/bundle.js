@@ -1128,7 +1128,7 @@
      *     container. Render options must *not* change between renders to the same
      *     container, as those changes will not effect previously rendered DOM.
      */
-    const render$1 = (result, container, options) => {
+    const render = (result, container, options) => {
         let part = parts.get(container);
         if (part === undefined) {
             removeNodes(container, container.firstChild);
@@ -1255,14 +1255,14 @@
         this.layout = layout;
         this.default = defaultRoute;
       }
-      isActiveRoute = function (hashedPath) {
+      isActiveRoute(hashedPath) {
         const request = parseRequestURL();
         const parsedURL =
           (request.resource ? '/' + request.resource : '/') +
           (request.id ? '/:id' : '') +
           (request.verb ? '/' + request.verb : '');
         return parsedURL === this.path;
-      };
+      }
     }
 
     class Router {
@@ -1271,7 +1271,7 @@
         this.rootElem = rootElem;
         this.init();
       }
-      init = function () {
+      init() {
         var r = this.routes;
         (function (scope, r) {
           window.addEventListener('hashchange', function (e) {
@@ -1279,8 +1279,8 @@
           });
         })(this, r);
         this.hasChanged(this, r);
-      };
-      hasChanged = function (scope, r) {
+      }
+      hasChanged(scope, r) {
         // change location if url doesn't start with a hash
         if (!location.href.startsWith(location.origin + '/#/')) {
           location = window.location.origin + '/#' + location.pathname;
@@ -1291,14 +1291,14 @@
             }
           });
         }
-      };
-      render = function (layout) {
+      }
+      render(layout) {
         scroll(0, 0);
-        render$1(layout.render(), this.rootElem);
+        render(layout.render(), this.rootElem);
         if (layout.onMount) {
           layout.onMount();
         }
-      };
+      }
     }
 
     class Page {

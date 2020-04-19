@@ -7,14 +7,14 @@ export class Route {
     this.layout = layout;
     this.default = defaultRoute;
   }
-  isActiveRoute = function (hashedPath) {
+  isActiveRoute(hashedPath) {
     const request = parseRequestURL();
     const parsedURL =
       (request.resource ? '/' + request.resource : '/') +
       (request.id ? '/:id' : '') +
       (request.verb ? '/' + request.verb : '');
     return parsedURL === this.path;
-  };
+  }
 }
 
 export default class Router {
@@ -23,7 +23,7 @@ export default class Router {
     this.rootElem = rootElem;
     this.init();
   }
-  init = function () {
+  init() {
     var r = this.routes;
     (function (scope, r) {
       window.addEventListener('hashchange', function (e) {
@@ -31,8 +31,8 @@ export default class Router {
       });
     })(this, r);
     this.hasChanged(this, r);
-  };
-  hasChanged = function (scope, r) {
+  }
+  hasChanged(scope, r) {
     // change location if url doesn't start with a hash
     if (!location.href.startsWith(location.origin + '/#/')) {
       location = window.location.origin + '/#' + location.pathname;
@@ -43,12 +43,12 @@ export default class Router {
         }
       });
     }
-  };
-  render = function (layout) {
+  }
+  render(layout) {
     scroll(0, 0);
     Render(layout.render(), this.rootElem);
     if (layout.onMount) {
       layout.onMount();
     }
-  };
+  }
 }

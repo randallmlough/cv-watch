@@ -19,9 +19,15 @@ const changeTemplate = (change) => {
   >`;
 };
 export const datapoint = (data, attribute) =>
-  html` <div class="flex justify-center py-4">
+  html` <div class="flex py-4">
     ${until(
       data.then(({ current, previous }) => {
+        if (current[attribute] === null) {
+          return html`<span
+            class="font-bold leading-none text-4xl text-gray-700"
+            >No data</span
+          >`;
+        }
         let change;
         if (previous && previous[attribute]) {
           change = percentChange(current[attribute], previous[attribute]);
@@ -40,7 +46,7 @@ export const datapoint = (data, attribute) =>
 
 export const dataCard = ({ title, dataSource, attribute }) => html`
   <div class="flex-grow w-full lg:w-3/12 mb-5 lg:mb-0 px-4">
-    <div class="bg-white p-2 shadow rounded">
+    <div class="bg-white px-5 py-2 shadow rounded">
       <div>
         <h4 class="text-gray-500 text-sm">${title}</h4>
       </div>
@@ -58,14 +64,19 @@ export const dataCards = (source, cards) => {
         attribute: 'positive',
       },
       {
-        title: 'Total Deaths',
-        dataSource: source,
-        attribute: 'death',
-      },
-      {
         title: 'Current Hospitalized',
         dataSource: source,
         attribute: 'hospitalizedCurrently',
+      },
+      {
+        title: 'Total Recovered',
+        dataSource: source,
+        attribute: 'recovered',
+      },
+      {
+        title: 'Total Deaths',
+        dataSource: source,
+        attribute: 'death',
       },
     ];
   }

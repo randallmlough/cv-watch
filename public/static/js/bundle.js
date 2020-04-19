@@ -22292,9 +22292,15 @@
   >`;
     };
     const datapoint = (data, attribute) =>
-      html` <div class="flex justify-center py-4">
+      html` <div class="flex py-4">
     ${until(
       data.then(({ current, previous }) => {
+        if (current[attribute] === null) {
+          return html`<span
+            class="font-bold leading-none text-4xl text-gray-700"
+            >No data</span
+          >`;
+        }
         let change;
         if (previous && previous[attribute]) {
           change = percentChange(current[attribute], previous[attribute]);
@@ -22313,7 +22319,7 @@
 
     const dataCard = ({ title, dataSource, attribute }) => html`
   <div class="flex-grow w-full lg:w-3/12 mb-5 lg:mb-0 px-4">
-    <div class="bg-white p-2 shadow rounded">
+    <div class="bg-white px-5 py-2 shadow rounded">
       <div>
         <h4 class="text-gray-500 text-sm">${title}</h4>
       </div>
@@ -22331,14 +22337,19 @@
             attribute: 'positive',
           },
           {
-            title: 'Total Deaths',
-            dataSource: source,
-            attribute: 'death',
-          },
-          {
             title: 'Current Hospitalized',
             dataSource: source,
             attribute: 'hospitalizedCurrently',
+          },
+          {
+            title: 'Total Recovered',
+            dataSource: source,
+            attribute: 'recovered',
+          },
+          {
+            title: 'Total Deaths',
+            dataSource: source,
+            attribute: 'death',
           },
         ];
       }
@@ -22551,7 +22562,28 @@
         </h1>
       </div>
       <div class="container mx-auto pb-5 px-5 lg:px-0 mb-5">
-        ${dataCards(currentData)}
+        ${dataCards(currentData, [
+          {
+            title: 'Positive Cases',
+            dataSource: currentData,
+            attribute: 'positive',
+          },
+          {
+            title: 'Current Hospitalized',
+            dataSource: currentData,
+            attribute: 'hospitalizedCurrently',
+          },
+          {
+            title: 'Total Recovered',
+            dataSource: currentData,
+            attribute: 'recovered',
+          },
+          {
+            title: 'Total Deaths',
+            dataSource: currentData,
+            attribute: 'death',
+          },
+        ])}
       </div>
       <section>
         <div class="container mb-10 px-5 lg:px-0 mx-auto ">

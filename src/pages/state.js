@@ -54,7 +54,28 @@ export default class State extends Page {
         </h1>
       </div>
       <div class="container mx-auto pb-5 px-5 lg:px-0 mb-5">
-        ${dataCards(currentData)}
+        ${dataCards(currentData, [
+          {
+            title: 'Positive Cases',
+            dataSource: currentData,
+            attribute: 'positive',
+          },
+          {
+            title: 'Current Hospitalized',
+            dataSource: currentData,
+            attribute: 'hospitalizedCurrently',
+          },
+          {
+            title: 'Total Recovered',
+            dataSource: currentData,
+            attribute: 'recovered',
+          },
+          {
+            title: 'Total Deaths',
+            dataSource: currentData,
+            attribute: 'death',
+          },
+        ])}
       </div>
       <section>
         <div class="container mb-10 px-5 lg:px-0 mx-auto ">

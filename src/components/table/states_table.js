@@ -7,7 +7,7 @@ const headers = {
   positive: 'Positive',
   negative: 'Negative',
   recovered: 'Recovered',
-  hospitalized: 'Hospitalized',
+  hospitalizedCurrently: 'Hospitalized',
   death: 'Death',
 };
 

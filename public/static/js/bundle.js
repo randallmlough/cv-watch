@@ -22237,44 +22237,6 @@
         }
     });
 
-    const lazyTable = (source, opts = {}) => {
-      const { headers = [], link = false, linkPrefix } = opts;
-
-      return html`<table class="table-auto">
-    <thead>
-      <tr>
-        ${headers.map((item) => html`<th class="px-4 py-2">${item}</th>`)}
-      </tr>
-    </thead>
-    <tbody>
-      ${until(
-        source.then((rows) =>
-          rows.map(
-            (cols) =>
-              html`<tr>
-                ${cols.map((col, i) => {
-                  if (link && i === 0) {
-                    const href =
-                      linkPrefix !== '' ? `${linkPrefix}/${col}` : `/${col}`;
-                    return html`<td class="border px-4 py-2">
-                      <a href="${href}" class="text-blue-500"
-                        >${statesAbv[col.toUpperCase()]}</a
-                      >
-                    </td>`;
-                  }
-                  return html`<td class="border px-4 py-2">${col}</td>`;
-                })}
-              </tr>`,
-          ),
-        ),
-        html`<tr>
-          <td class="border px-4 py-2">Loading</td>
-        </tr>`,
-      )}
-    </tbody>
-  </table>`;
-    };
-
     const changeTemplate = (change) => {
       let color = 'text-gray-500 text-sm';
       let changeText = 'No change';
@@ -22400,8 +22362,6 @@
     <canvas id="deaths" width="400" height="400"></canvas>`;
     };
 
-    const page = 'United States';
-
     const headers = {
       id: 'State',
       positive: 'Positive',
@@ -22418,22 +22378,63 @@
         const cols = [];
         attributes.forEach((attr) => {
           if (row[attr]) {
-            cols.push(row[attr]);
+            let value;
+            if (typeof row[attr] === 'number') {
+              value = numberWithCommas(row[attr]);
+            } else {
+              value = row[attr];
+            }
+            cols.push(value);
           } else {
             cols.push(null);
           }
         });
-        // for (let [key, value] of Object.entries(row)) {
-        //     debugger;
-        //     if (attr === key) {
-        //       cols.push(value);
-        //     }
-        //   }
-        // });
         tableData.push(cols);
       });
       return tableData;
     };
+
+    const statesTable = (source) => {
+      return html`<table class="table-auto">
+    <thead>
+      <tr>
+        ${Object.values(headers).map(
+          (item) => html`<th class="px-4 py-2">${item}</th>`,
+        )}
+      </tr>
+    </thead>
+    <tbody>
+      ${until(
+        source.then((rows) => {
+          const data = formatStatesTableData(rows);
+          return data.map(
+            (cols) =>
+              html`<tr>
+                ${cols.map((col, i) => {
+                  if (i === 0) {
+                    const href = `/states/${col}`;
+                    return html`<td class="border px-4 py-2">
+                      <a href="${href}" class="text-blue-500"
+                        >${statesAbv[col.toUpperCase()]}</a
+                      >
+                    </td>`;
+                  }
+                  return html`<td class="border px-4 py-2">${col}</td>`;
+                })}
+              </tr>`,
+          );
+        }),
+
+        html`<tr>
+          <td class="border px-4 py-2">Loading</td>
+        </tr>`,
+      )}
+    </tbody>
+  </table>`;
+    };
+
+    const page = 'United States';
+
     class Homepage extends Page {
       onMount() {
         this.data.usDaily().then((source) => {
@@ -22473,7 +22474,7 @@
 
         const statesTableData = this.data
           .statesCurrent()
-          .then((results) => formatStatesTableData(results.value));
+          .then((results) => results.value);
         return html`
       <div class="container mx-auto py-5 px-5 lg:px-0">
         <!-- <h1 class="text-4xl lg:text-6xl text-primary-500">${title}</h1> -->
@@ -22509,11 +22510,7 @@
               <h3 class="font-bold text-xl text-gray-700">By State</h3>
             </header>
             <div class="overflow-x-scroll">
-              ${lazyTable(statesTableData, {
-                headers: Object.values(headers),
-                link: true,
-                linkPrefix: '/#/states',
-              })}
+              ${statesTable(statesTableData)}
             </div>
           </div>
         </div>

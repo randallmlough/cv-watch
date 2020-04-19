@@ -1,3 +1,7 @@
+import { html } from 'lit-html';
+import { until } from 'lit-html/directives/until.js';
+import { statesAbv, numberWithCommas } from '../../util';
+
 const headers = {
   id: 'State',
   positive: 'Positive',
@@ -12,29 +16,38 @@ const formatStatesTableData = (data) => {
   data.forEach((row) => {
     const attributes = Object.keys(headers);
     const cols = [];
-    for (let [key, value] of Object.entries(row)) {
-      attributes.forEach((attr) => {
-        if (attr === key) {
-          cols.push(value);
+    attributes.forEach((attr) => {
+      if (row[attr]) {
+        let value;
+        if (typeof row[attr] === 'number') {
+          value = numberWithCommas(row[attr]);
+        } else {
+          value = row[attr];
         }
-      });
-    }
+        cols.push(value);
+      } else {
+        cols.push(null);
+      }
+    });
     tableData.push(cols);
   });
   return tableData;
 };
 
-export const statesTable = (source) => {
+const statesTable = (source) => {
   return html`<table class="table-auto">
     <thead>
       <tr>
-        ${headers.map((item) => html`<th class="px-4 py-2">${item}</th>`)}
+        ${Object.values(headers).map(
+          (item) => html`<th class="px-4 py-2">${item}</th>`,
+        )}
       </tr>
     </thead>
     <tbody>
       ${until(
-        source.then((rows) =>
-          rows.map(
+        source.then((rows) => {
+          const data = formatStatesTableData(rows);
+          return data.map(
             (cols) =>
               html`<tr>
                 ${cols.map((col, i) => {
@@ -49,8 +62,9 @@ export const statesTable = (source) => {
                   return html`<td class="border px-4 py-2">${col}</td>`;
                 })}
               </tr>`,
-          ),
-        ),
+          );
+        }),
+
         html`<tr>
           <td class="border px-4 py-2">Loading</td>
         </tr>`,
@@ -58,3 +72,5 @@ export const statesTable = (source) => {
     </tbody>
   </table>`;
 };
+
+export default statesTable;

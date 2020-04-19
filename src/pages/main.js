@@ -1,43 +1,12 @@
 import Page from '../page';
 import { html } from 'lit-html';
 import lineChart from '../charts/line';
-import { lazyTable, dataCards } from '../components';
+import { dataCards } from '../components';
 import { positiveCasesLineChart, deathsLineChart } from '../components/chart';
+import statesTable from '../components/table/states_table';
 
 const page = 'United States';
 
-const headers = {
-  id: 'State',
-  positive: 'Positive',
-  negative: 'Negative',
-  recovered: 'Recovered',
-  hospitalized: 'Hospitalized',
-  death: 'Death',
-};
-
-const formatStatesTableData = (data) => {
-  const tableData = [];
-  data.forEach((row) => {
-    const attributes = Object.keys(headers);
-    const cols = [];
-    attributes.forEach((attr) => {
-      if (row[attr]) {
-        cols.push(row[attr]);
-      } else {
-        cols.push(null);
-      }
-    });
-    // for (let [key, value] of Object.entries(row)) {
-    //     debugger;
-    //     if (attr === key) {
-    //       cols.push(value);
-    //     }
-    //   }
-    // });
-    tableData.push(cols);
-  });
-  return tableData;
-};
 export default class Homepage extends Page {
   onMount() {
     this.data.usDaily().then((source) => {
@@ -77,7 +46,7 @@ export default class Homepage extends Page {
 
     const statesTableData = this.data
       .statesCurrent()
-      .then((results) => formatStatesTableData(results.value));
+      .then((results) => results.value);
     return html`
       <div class="container mx-auto py-5 px-5 lg:px-0">
         <!-- <h1 class="text-4xl lg:text-6xl text-primary-500">${title}</h1> -->
@@ -113,11 +82,7 @@ export default class Homepage extends Page {
               <h3 class="font-bold text-xl text-gray-700">By State</h3>
             </header>
             <div class="overflow-x-scroll">
-              ${lazyTable(statesTableData, {
-                headers: Object.values(headers),
-                link: true,
-                linkPrefix: '/#/states',
-              })}
+              ${statesTable(statesTableData)}
             </div>
           </div>
         </div>

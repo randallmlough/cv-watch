@@ -20,11 +20,20 @@ const formatStatesTableData = (data) => {
   data.forEach((row) => {
     const attributes = Object.keys(headers);
     const cols = [];
-    for (let [key, value] of Object.entries(row)) {
-      if (attributes.includes(key)) {
-        cols.push(value);
+    attributes.forEach((attr) => {
+      if (row[attr]) {
+        cols.push(row[attr]);
+      } else {
+        cols.push(null);
       }
-    }
+    });
+    // for (let [key, value] of Object.entries(row)) {
+    //     debugger;
+    //     if (attr === key) {
+    //       cols.push(value);
+    //     }
+    //   }
+    // });
     tableData.push(cols);
   });
   return tableData;

@@ -52,7 +52,7 @@ const statesTable = (source) => {
               html`<tr>
                 ${cols.map((col, i) => {
                   if (i === 0) {
-                    const href = `/states/${col}`;
+                    const href = `/#/states/${col}`;
                     return html`<td class="border px-4 py-2">
                       <a href="${href}" class="text-blue-500"
                         >${statesAbv[col.toUpperCase()]}</a

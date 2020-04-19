@@ -62,6 +62,7 @@ const formatCovidTrackingProjectStateData = (data) => {
         id: value.state.toLowerCase(),
         date: value.dateChecked,
         death: value.death,
+        deathIncrease: value.deathIncrease,
         hospitalized: value.hospitalized,
         hospitalizedCurrently: value.hospitalizedCurrently,
         negative: value.negative,

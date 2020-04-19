@@ -50,6 +50,18 @@ export default class State extends Page {
           hideLabel: true,
         },
       );
+      barChart(
+        'death-bar',
+        this.data.getDataset(data, {
+          deathIncrease: {
+            label: '# of positive cases',
+            color: 'orange',
+          },
+        }),
+        {
+          hideLabel: true,
+        },
+      );
     });
   }
 
@@ -114,12 +126,25 @@ export default class State extends Page {
           </div>
         </div>
         <div class="container mb-10 px-5 lg:px-0 mx-auto ">
-          <div class="bg-white p-5 rounded shadow">
-            ${chart({
-              id: 'deaths',
-              title: 'Total deaths',
-              subtitle: `${state}`,
-            })}
+          <div class="flex flex-wrap -mx-4">
+            <div class="w-full lg:w-1/2 px-4">
+              <div class="h-full bg-white p-5 rounded shadow">
+                ${chart({
+                  id: 'deaths',
+                  title: 'Total deaths',
+                  subtitle: `${state}`,
+                })}
+              </div>
+            </div>
+            <div class="w-full lg:w-1/2 px-4">
+              <div class="h-full bg-white p-5 rounded shadow">
+                ${chart({
+                  id: 'death-bar',
+                  title: 'Daily deaths',
+                  subtitle: `${state}`,
+                })}
+              </div>
+            </div>
           </div>
         </div>
       </section>

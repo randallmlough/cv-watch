@@ -1,12 +1,10 @@
 import Page from '../page';
 import { html } from 'lit-html';
-import lineChart from '../charts/line';
 import { dataCards } from '../components';
 import chart from '../components/chart';
 import statesTable from '../components/table/states_table';
-import barChart from '../charts/bar';
-
-const page = 'United States';
+import { lineChart, barChart } from '../charts';
+import { stateDropdown } from '../components/state_dropdown';
 
 export default class Homepage extends Page {
   onMount() {
@@ -65,10 +63,11 @@ export default class Homepage extends Page {
 
   render() {
     const { title } = this.page;
+    const page = 'United States';
     const data = this.data.usDaily().then(({ value }) => {
       return { current: value[0], previous: value[1] };
     });
-    const historicData = this.data.hi;
+
     const statesTableData = this.data
       .statesCurrent()
       .then((results) => results.value);
@@ -81,17 +80,18 @@ export default class Homepage extends Page {
         </h3>
       </div>
       <div class="container mx-auto pt-5 px-5 lg:px-0">
-        <h2 class="text-4xl lg:text-6xl text-gray-700 font-bold">
+        ${stateDropdown(page)}
+        <!-- <h2 class="text-4xl lg:text-6xl text-gray-700 font-bold">
           ${page}
-        </h2>
+        </h2> -->
       </div>
       <div class="container mx-auto pb-5 px-5 lg:px-0 mb-5">
         ${dataCards(data)}
       </div>
       <section>
-        <div class="container mb-10 px-5 lg:px-0 mx-auto ">
+        <div class="container px-5 lg:px-0 mx-auto ">
           <div class="flex flex-wrap -mx-4">
-            <div class="w-full lg:w-1/2 px-4">
+            <div class="w-full lg:w-1/2 px-4 mb-10">
               <div class="h-full bg-white p-5 rounded shadow">
                 ${chart({
                   id: 'positive',
@@ -100,7 +100,7 @@ export default class Homepage extends Page {
                 })}
               </div>
             </div>
-            <div class="w-full lg:w-1/2 px-4">
+            <div class="w-full lg:w-1/2 px-4 mb-10">
               <div class="h-full bg-white p-5 rounded shadow">
                 ${chart({
                   id: 'pos-bar',
@@ -111,9 +111,9 @@ export default class Homepage extends Page {
             </div>
           </div>
         </div>
-        <div class="container mb-10 px-5 lg:px-0 mx-auto ">
+        <div class="container px-5 lg:px-0 mx-auto ">
           <div class="flex flex-wrap -mx-4">
-            <div class="w-full lg:w-1/2 px-4">
+            <div class="w-full lg:w-1/2 px-4 mb-10">
               <div class="h-full bg-white p-5 rounded shadow">
                 ${chart({
                   id: 'deaths',
@@ -122,7 +122,7 @@ export default class Homepage extends Page {
                 })}
               </div>
             </div>
-            <div class="w-full lg:w-1/2 px-4">
+            <div class="w-full lg:w-1/2 px-4 mb-10">
               <div class="h-full bg-white p-5 rounded shadow">
                 ${chart({
                   id: 'death-bar',

@@ -22,6 +22,7 @@ export const percentChange = (newValue, oldValue) => {
 };
 
 export const statesAbv = {
+  US: 'United States',
   AL: 'Alabama',
   AK: 'Alaska',
   AZ: 'Arizona',

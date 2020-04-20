@@ -35,7 +35,7 @@ const formatStatesTableData = (data) => {
 };
 
 const statesTable = (source) => {
-  return html`<table class="table-auto">
+  return html`<table id="sortable" class="table-auto">
     <thead>
       <tr>
         ${Object.values(headers).map(

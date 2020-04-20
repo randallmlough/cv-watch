@@ -60,6 +60,7 @@ export default class Data {
         const cache = this.cache[this.source];
         if (cache.us && cache.us.value && cache.us.value.length > 0) {
           return cache.us;
+        } else {
         }
       }
 

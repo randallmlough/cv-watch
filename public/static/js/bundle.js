@@ -1188,6 +1188,7 @@
     };
 
     const statesAbv = {
+      US: 'United States',
       AL: 'Alabama',
       AK: 'Alaska',
       AZ: 'Arizona',
@@ -1309,6 +1310,276 @@
       onMount() {}
       render() {}
     }
+
+    /**
+     * @license
+     * Copyright (c) 2017 The Polymer Project Authors. All rights reserved.
+     * This code may only be used under the BSD style license found at
+     * http://polymer.github.io/LICENSE.txt
+     * The complete set of authors may be found at
+     * http://polymer.github.io/AUTHORS.txt
+     * The complete set of contributors may be found at
+     * http://polymer.github.io/CONTRIBUTORS.txt
+     * Code distributed by Google as part of the polymer project is also
+     * subject to an additional IP rights grant found at
+     * http://polymer.github.io/PATENTS.txt
+     */
+    const _state = new WeakMap();
+    // Effectively infinity, but a SMI.
+    const _infinity = 0x7fffffff;
+    /**
+     * Renders one of a series of values, including Promises, to a Part.
+     *
+     * Values are rendered in priority order, with the first argument having the
+     * highest priority and the last argument having the lowest priority. If a
+     * value is a Promise, low-priority values will be rendered until it resolves.
+     *
+     * The priority of values can be used to create placeholder content for async
+     * data. For example, a Promise with pending content can be the first,
+     * highest-priority, argument, and a non_promise loading indicator template can
+     * be used as the second, lower-priority, argument. The loading indicator will
+     * render immediately, and the primary content will render when the Promise
+     * resolves.
+     *
+     * Example:
+     *
+     *     const content = fetch('./content.txt').then(r => r.text());
+     *     html`${until(content, html`<span>Loading...</span>`)}`
+     */
+    const until = directive((...args) => (part) => {
+        let state = _state.get(part);
+        if (state === undefined) {
+            state = {
+                lastRenderedIndex: _infinity,
+                values: [],
+            };
+            _state.set(part, state);
+        }
+        const previousValues = state.values;
+        let previousLength = previousValues.length;
+        state.values = args;
+        for (let i = 0; i < args.length; i++) {
+            // If we've rendered a higher-priority value already, stop.
+            if (i > state.lastRenderedIndex) {
+                break;
+            }
+            const value = args[i];
+            // Render non-Promise values immediately
+            if (isPrimitive(value) ||
+                typeof value.then !== 'function') {
+                part.setValue(value);
+                state.lastRenderedIndex = i;
+                // Since a lower-priority value will never overwrite a higher-priority
+                // synchronous value, we can stop processing now.
+                break;
+            }
+            // If this is a Promise we've already handled, skip it.
+            if (i < previousLength && value === previousValues[i]) {
+                continue;
+            }
+            // We have a Promise that we haven't seen before, so priorities may have
+            // changed. Forget what we rendered before.
+            state.lastRenderedIndex = _infinity;
+            previousLength = 0;
+            Promise.resolve(value).then((resolvedValue) => {
+                const index = state.values.indexOf(value);
+                // If state.values doesn't contain the value, we've re-rendered without
+                // the value, so don't render it. Then, only render if the value is
+                // higher-priority than what's already been rendered.
+                if (index > -1 && index < state.lastRenderedIndex) {
+                    state.lastRenderedIndex = index;
+                    part.setValue(resolvedValue);
+                    part.commit();
+                }
+            });
+        }
+    });
+
+    const changeTemplate = (change) => {
+      let color = 'text-gray-500 text-sm';
+      let changeText = 'No change';
+      if (change > 0) {
+        color = 'text-green-400';
+        changeText = `${change}%`;
+      } else if (change < 0) {
+        color = 'text-red-400';
+        changeText = `${change}%`;
+      }
+      return html`<span
+    class="absolute ml-2 pb-1 text-base ${color}"
+    style="left:100%"
+    >${changeText}</span
+  >`;
+    };
+    const datapoint = (data, attribute) =>
+      html` <div class="flex py-4">
+    ${until(
+      data.then(({ current, previous }) => {
+        if (current[attribute] === null) {
+          return html`<span
+            class="font-bold leading-none text-4xl text-gray-700"
+            >No data</span
+          >`;
+        }
+        let change;
+        if (previous && previous[attribute]) {
+          change = percentChange(current[attribute], previous[attribute]);
+        }
+        return html`
+          <span
+            class="flex font-bold leading-none items-end justify-end text-4xl text-gray-700 relative"
+          >
+            ${numberWithCommas(current[attribute])} ${changeTemplate(change)}
+          </span>
+        `;
+      }),
+      html`<span>Loading...</span>`,
+    )}
+  </div>`;
+
+    const dataCard = ({ title, dataSource, attribute }) => html`
+  <div class="flex-grow w-full lg:w-3/12 mb-5 lg:mb-0 px-4">
+    <div class="bg-white px-5 py-2 shadow rounded">
+      <div>
+        <h4 class="text-gray-500 text-sm">${title}</h4>
+      </div>
+      ${datapoint(dataSource, attribute)}
+    </div>
+  </div>
+`;
+
+    const dataCards = (source, cards) => {
+      if (!cards) {
+        cards = [
+          {
+            title: 'Positive Cases',
+            dataSource: source,
+            attribute: 'positive',
+          },
+          {
+            title: 'Current Hospitalized',
+            dataSource: source,
+            attribute: 'hospitalizedCurrently',
+          },
+          {
+            title: 'Total Recovered',
+            dataSource: source,
+            attribute: 'recovered',
+          },
+          {
+            title: 'Total Deaths',
+            dataSource: source,
+            attribute: 'death',
+          },
+        ];
+      }
+
+      return html`
+    <div class="flex flex-wrap justify-around -mx-4">
+      ${cards.map((card) => dataCard(card))}
+    </div>
+  `;
+    };
+
+    const logo = html`<a href="/#/"
+  ><h1 class="text-2xl text-primary-500">CV 🕵️‍♂️</h1></a
+>`;
+
+    const navbar = html`
+  <header>
+    <div class="container mx-auto flex items-center py-4 px-5 lg:px-0">
+      <!-- <div class="mr-10">${logo}</div> -->
+      <nav>
+        <ul>
+          <li>
+            <a href="/#/" class="text-blue-400 text-sm font-bold">Back</a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+`;
+
+    const chart = (options = {}) => {
+      const { id = undefined, title = undefined, subtitle = undefined } = options;
+      return html`<header class="mb-5">
+      ${title &&
+      html`<h3 class="font-bold text-xl text-gray-700">${title}</h3>`}
+      ${subtitle && html`<p class="text-gray-600">${subtitle}</p>`}
+    </header>
+    <canvas id="${id}" width="400" height="400"></canvas>`;
+    };
+
+    const headers = {
+      id: 'State',
+      positive: 'Positive',
+      negative: 'Negative',
+      recovered: 'Recovered',
+      hospitalizedCurrently: 'Hospitalized',
+      death: 'Death',
+    };
+
+    const formatStatesTableData = (data) => {
+      const tableData = [];
+      data.forEach((row) => {
+        const attributes = Object.keys(headers);
+        const cols = [];
+        attributes.forEach((attr) => {
+          if (row[attr]) {
+            let value;
+            if (typeof row[attr] === 'number') {
+              value = numberWithCommas(row[attr]);
+            } else {
+              value = row[attr];
+            }
+            cols.push(value);
+          } else {
+            cols.push(null);
+          }
+        });
+        tableData.push(cols);
+      });
+      return tableData;
+    };
+
+    const statesTable = (source) => {
+      return html`<table id="sortable" class="table-auto">
+    <thead>
+      <tr>
+        ${Object.values(headers).map(
+          (item) => html`<th class="px-4 py-2">${item}</th>`,
+        )}
+      </tr>
+    </thead>
+    <tbody>
+      ${until(
+        source.then((rows) => {
+          const data = formatStatesTableData(rows);
+          return data.map(
+            (cols) =>
+              html`<tr>
+                ${cols.map((col, i) => {
+                  if (i === 0) {
+                    const href = `/#/states/${col}`;
+                    return html`<td class="border px-4 py-2">
+                      <a href="${href}" class="text-blue-500"
+                        >${statesAbv[col.toUpperCase()]}</a
+                      >
+                    </td>`;
+                  }
+                  return html`<td class="border px-4 py-2">${col}</td>`;
+                })}
+              </tr>`,
+          );
+        }),
+
+        html`<tr>
+          <td class="border px-4 py-2">Loading</td>
+        </tr>`,
+      )}
+    </tbody>
+  </table>`;
+    };
 
     var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
 
@@ -22093,6 +22364,60 @@
       };
     };
 
+    const barChart = async (ctx, datapoints = [], opts = {}) => {
+      const { hideLabel = false } = opts;
+      let el;
+      if (typeof ctx === 'string') {
+        el = document.getElementById(ctx);
+      }
+      const chart = new Chart(el, {
+        type: 'bar',
+        data: {},
+        options: {
+          responsive: true,
+          legend: {
+            display: !hideLabel,
+          },
+          tooltips: {
+            mode: 'index',
+            intersect: false,
+          },
+          hover: {
+            mode: 'nearest',
+            intersect: true,
+          },
+          scales: {
+            x: {
+              display: true,
+              scaleLabel: {
+                display: true,
+                labelString: 'Month',
+              },
+            },
+            y: {
+              display: true,
+              scaleLabel: {
+                display: true,
+                labelString: 'Value',
+              },
+            },
+          },
+        },
+      });
+
+      datapoints.forEach(({ data, options, labels }, i) => {
+        chart.data.labels = labels;
+        chart.data.datasets[i] = {
+          label: options.label,
+          data: data,
+          borderWidth: 1,
+          hoverBorderWidth: 1,
+          ...datasetColorGenerator(options.color),
+        };
+      });
+      chart.update();
+    };
+
     /**
      *
      *
@@ -22153,331 +22478,67 @@
       chart.update();
     };
 
-    /**
-     * @license
-     * Copyright (c) 2017 The Polymer Project Authors. All rights reserved.
-     * This code may only be used under the BSD style license found at
-     * http://polymer.github.io/LICENSE.txt
-     * The complete set of authors may be found at
-     * http://polymer.github.io/AUTHORS.txt
-     * The complete set of contributors may be found at
-     * http://polymer.github.io/CONTRIBUTORS.txt
-     * Code distributed by Google as part of the polymer project is also
-     * subject to an additional IP rights grant found at
-     * http://polymer.github.io/PATENTS.txt
-     */
-    const _state = new WeakMap();
-    // Effectively infinity, but a SMI.
-    const _infinity = 0x7fffffff;
-    /**
-     * Renders one of a series of values, including Promises, to a Part.
-     *
-     * Values are rendered in priority order, with the first argument having the
-     * highest priority and the last argument having the lowest priority. If a
-     * value is a Promise, low-priority values will be rendered until it resolves.
-     *
-     * The priority of values can be used to create placeholder content for async
-     * data. For example, a Promise with pending content can be the first,
-     * highest-priority, argument, and a non_promise loading indicator template can
-     * be used as the second, lower-priority, argument. The loading indicator will
-     * render immediately, and the primary content will render when the Promise
-     * resolves.
-     *
-     * Example:
-     *
-     *     const content = fetch('./content.txt').then(r => r.text());
-     *     html`${until(content, html`<span>Loading...</span>`)}`
-     */
-    const until = directive((...args) => (part) => {
-        let state = _state.get(part);
-        if (state === undefined) {
-            state = {
-                lastRenderedIndex: _infinity,
-                values: [],
-            };
-            _state.set(part, state);
-        }
-        const previousValues = state.values;
-        let previousLength = previousValues.length;
-        state.values = args;
-        for (let i = 0; i < args.length; i++) {
-            // If we've rendered a higher-priority value already, stop.
-            if (i > state.lastRenderedIndex) {
-                break;
-            }
-            const value = args[i];
-            // Render non-Promise values immediately
-            if (isPrimitive(value) ||
-                typeof value.then !== 'function') {
-                part.setValue(value);
-                state.lastRenderedIndex = i;
-                // Since a lower-priority value will never overwrite a higher-priority
-                // synchronous value, we can stop processing now.
-                break;
-            }
-            // If this is a Promise we've already handled, skip it.
-            if (i < previousLength && value === previousValues[i]) {
-                continue;
-            }
-            // We have a Promise that we haven't seen before, so priorities may have
-            // changed. Forget what we rendered before.
-            state.lastRenderedIndex = _infinity;
-            previousLength = 0;
-            Promise.resolve(value).then((resolvedValue) => {
-                const index = state.values.indexOf(value);
-                // If state.values doesn't contain the value, we've re-rendered without
-                // the value, so don't render it. Then, only render if the value is
-                // higher-priority than what's already been rendered.
-                if (index > -1 && index < state.lastRenderedIndex) {
-                    state.lastRenderedIndex = index;
-                    part.setValue(resolvedValue);
-                    part.commit();
-                }
-            });
-        }
-    });
+    const stateDropdown = (title) => {
+      const currentPage = location.pathname + location.hash;
+      const handleClick = {
+        handleEvent(e) {
+          const wrapper = e.currentTarget.closest('.js-dropdown-wrapper');
+          const container = wrapper.querySelector('.js-dropdown-container');
+          container.classList.toggle('hidden');
+        },
+        // event listener objects can also define zero or more of the event
+        // listener options: capture, passive, and once.
+        capture: true,
+      };
 
-    const changeTemplate = (change) => {
-      let color = 'text-gray-500 text-sm';
-      let changeText = 'No change';
-      if (change > 0) {
-        color = 'text-green-400';
-        changeText = `${change}%`;
-      } else if (change < 0) {
-        color = 'text-red-400';
-        changeText = `${change}%`;
-      }
-      return html`<span
-    class="absolute ml-2 pb-1 text-base ${color}"
-    style="left:100%"
-    >${changeText}</span
-  >`;
-    };
-    const datapoint = (data, attribute) =>
-      html` <div class="flex py-4">
-    ${until(
-      data.then(({ current, previous }) => {
-        if (current[attribute] === null) {
-          return html`<span
-            class="font-bold leading-none text-4xl text-gray-700"
-            >No data</span
-          >`;
+      const statesList = () => {
+        const stateLink = [];
+        for (let [key, value] of Object.entries(statesAbv)) {
+          const href = key === 'US' ? '/#/' : `/#/states/${key}`;
+          const link = html` <li class="mb-2 text-2xl">
+        <a
+          href=${href}
+          class="block hover:text-orange-400 ${currentPage === href
+            ? 'text-orange-400'
+            : ''}"
+          @click=${handleClick}
+          >${value}</a
+        >
+      </li>`;
+          stateLink.push(link);
         }
-        let change;
-        if (previous && previous[attribute]) {
-          change = percentChange(current[attribute], previous[attribute]);
-        }
-        return html`
-          <span
-            class="flex font-bold leading-none items-end justify-end text-4xl text-gray-700 relative"
-          >
-            ${numberWithCommas(current[attribute])} ${changeTemplate(change)}
-          </span>
-        `;
-      }),
-      html`<span>Loading...</span>`,
-    )}
-  </div>`;
-
-    const dataCard = ({ title, dataSource, attribute }) => html`
-  <div class="flex-grow w-full lg:w-3/12 mb-5 lg:mb-0 px-4">
-    <div class="bg-white px-5 py-2 shadow rounded">
-      <div>
-        <h4 class="text-gray-500 text-sm">${title}</h4>
-      </div>
-      ${datapoint(dataSource, attribute)}
-    </div>
-  </div>
-`;
-
-    const dataCards = (source, cards) => {
-      if (!cards) {
-        cards = [
-          {
-            title: 'Positive Cases',
-            dataSource: source,
-            attribute: 'positive',
-          },
-          {
-            title: 'Current Hospitalized',
-            dataSource: source,
-            attribute: 'hospitalizedCurrently',
-          },
-          {
-            title: 'Total Recovered',
-            dataSource: source,
-            attribute: 'recovered',
-          },
-          {
-            title: 'Total Deaths',
-            dataSource: source,
-            attribute: 'death',
-          },
-        ];
-      }
+        return html`<ul class="h-64 overflow-y-scroll px-8 py-4">
+      ${stateLink}
+    </ul>`;
+      };
 
       return html`
-    <div class="flex flex-wrap justify-around -mx-4">
-      ${cards.map((card) => dataCard(card))}
+    <div class="relative js-dropdown-wrapper">
+      <button
+        class="flex items-center focus:outline-none"
+        @click=${handleClick}
+      >
+        <h1 class="text-4xl lg:text-6xl text-gray-700 font-bold">
+          ${title}
+        </h1>
+        <span
+          class="leading-none text-xl lg:text-3xl text-gray-600 ml-2 lg:ml-3 mt-2 lg:mt-3"
+          >&#9660;</span
+        >
+      </button>
+      <div class="-mt-2 absolute hidden js-dropdown-container z-50">
+        <div class="bg-gray-700 rounded shadow text-white">
+          ${statesList()}
+          <div
+            class="bg-gray-800 opacity-50 py-3 text-center text-gray-200 text-sm"
+          >
+            &#9650; Scroll to find state &#9660;
+          </div>
+        </div>
+      </div>
     </div>
   `;
     };
-
-    const logo = html`<a href="/#/"
-  ><h1 class="text-2xl text-primary-500">CV 🕵️‍♂️</h1></a
->`;
-
-    const navbar = html`
-  <header>
-    <div class="container mx-auto flex items-center py-4 px-5 lg:px-0">
-      <!-- <div class="mr-10">${logo}</div> -->
-      <nav>
-        <ul>
-          <li>
-            <a href="/#/" class="text-blue-400 text-sm font-bold">Back</a>
-          </li>
-        </ul>
-      </nav>
-    </div>
-  </header>
-`;
-
-    const chart = (options = {}) => {
-      const { id = undefined, title = undefined, subtitle = undefined } = options;
-      return html`<header class="mb-5">
-      ${title &&
-      html`<h3 class="font-bold text-xl text-gray-700">${title}</h3>`}
-      ${subtitle && html`<p class="text-gray-600">${subtitle}</p>`}
-    </header>
-    <canvas id="${id}" width="400" height="400"></canvas>`;
-    };
-
-    const headers = {
-      id: 'State',
-      positive: 'Positive',
-      negative: 'Negative',
-      recovered: 'Recovered',
-      hospitalizedCurrently: 'Hospitalized',
-      death: 'Death',
-    };
-
-    const formatStatesTableData = (data) => {
-      const tableData = [];
-      data.forEach((row) => {
-        const attributes = Object.keys(headers);
-        const cols = [];
-        attributes.forEach((attr) => {
-          if (row[attr]) {
-            let value;
-            if (typeof row[attr] === 'number') {
-              value = numberWithCommas(row[attr]);
-            } else {
-              value = row[attr];
-            }
-            cols.push(value);
-          } else {
-            cols.push(null);
-          }
-        });
-        tableData.push(cols);
-      });
-      return tableData;
-    };
-
-    const statesTable = (source) => {
-      return html`<table class="table-auto">
-    <thead>
-      <tr>
-        ${Object.values(headers).map(
-          (item) => html`<th class="px-4 py-2">${item}</th>`,
-        )}
-      </tr>
-    </thead>
-    <tbody>
-      ${until(
-        source.then((rows) => {
-          const data = formatStatesTableData(rows);
-          return data.map(
-            (cols) =>
-              html`<tr>
-                ${cols.map((col, i) => {
-                  if (i === 0) {
-                    const href = `/#/states/${col}`;
-                    return html`<td class="border px-4 py-2">
-                      <a href="${href}" class="text-blue-500"
-                        >${statesAbv[col.toUpperCase()]}</a
-                      >
-                    </td>`;
-                  }
-                  return html`<td class="border px-4 py-2">${col}</td>`;
-                })}
-              </tr>`,
-          );
-        }),
-
-        html`<tr>
-          <td class="border px-4 py-2">Loading</td>
-        </tr>`,
-      )}
-    </tbody>
-  </table>`;
-    };
-
-    const barChart = async (ctx, datapoints = [], opts = {}) => {
-      const { hideLabel = false } = opts;
-      let el;
-      if (typeof ctx === 'string') {
-        el = document.getElementById(ctx);
-      }
-      const chart = new Chart(el, {
-        type: 'bar',
-        data: {},
-        options: {
-          responsive: true,
-          legend: {
-            display: !hideLabel,
-          },
-          tooltips: {
-            mode: 'index',
-            intersect: false,
-          },
-          hover: {
-            mode: 'nearest',
-            intersect: true,
-          },
-          scales: {
-            x: {
-              display: true,
-              scaleLabel: {
-                display: true,
-                labelString: 'Month',
-              },
-            },
-            y: {
-              display: true,
-              scaleLabel: {
-                display: true,
-                labelString: 'Value',
-              },
-            },
-          },
-        },
-      });
-
-      datapoints.forEach(({ data, options, labels }, i) => {
-        chart.data.labels = labels;
-        chart.data.datasets[i] = {
-          label: options.label,
-          data: data,
-          borderWidth: 1,
-          hoverBorderWidth: 1,
-          ...datasetColorGenerator(options.color),
-        };
-      });
-      chart.update();
-    };
-
-    const page = 'United States';
 
     class Homepage extends Page {
       onMount() {
@@ -22536,10 +22597,11 @@
 
       render() {
         const { title } = this.page;
+        const page = 'United States';
         const data = this.data.usDaily().then(({ value }) => {
           return { current: value[0], previous: value[1] };
         });
-        const historicData = this.data.hi;
+
         const statesTableData = this.data
           .statesCurrent()
           .then((results) => results.value);
@@ -22552,17 +22614,18 @@
         </h3>
       </div>
       <div class="container mx-auto pt-5 px-5 lg:px-0">
-        <h2 class="text-4xl lg:text-6xl text-gray-700 font-bold">
+        ${stateDropdown(page)}
+        <!-- <h2 class="text-4xl lg:text-6xl text-gray-700 font-bold">
           ${page}
-        </h2>
+        </h2> -->
       </div>
       <div class="container mx-auto pb-5 px-5 lg:px-0 mb-5">
         ${dataCards(data)}
       </div>
       <section>
-        <div class="container mb-10 px-5 lg:px-0 mx-auto ">
+        <div class="container px-5 lg:px-0 mx-auto ">
           <div class="flex flex-wrap -mx-4">
-            <div class="w-full lg:w-1/2 px-4">
+            <div class="w-full lg:w-1/2 px-4 mb-10">
               <div class="h-full bg-white p-5 rounded shadow">
                 ${chart({
                   id: 'positive',
@@ -22571,7 +22634,7 @@
                 })}
               </div>
             </div>
-            <div class="w-full lg:w-1/2 px-4">
+            <div class="w-full lg:w-1/2 px-4 mb-10">
               <div class="h-full bg-white p-5 rounded shadow">
                 ${chart({
                   id: 'pos-bar',
@@ -22582,9 +22645,9 @@
             </div>
           </div>
         </div>
-        <div class="container mb-10 px-5 lg:px-0 mx-auto ">
+        <div class="container px-5 lg:px-0 mx-auto ">
           <div class="flex flex-wrap -mx-4">
-            <div class="w-full lg:w-1/2 px-4">
+            <div class="w-full lg:w-1/2 px-4 mb-10">
               <div class="h-full bg-white p-5 rounded shadow">
                 ${chart({
                   id: 'deaths',
@@ -22593,7 +22656,7 @@
                 })}
               </div>
             </div>
-            <div class="w-full lg:w-1/2 px-4">
+            <div class="w-full lg:w-1/2 px-4 mb-10">
               <div class="h-full bg-white p-5 rounded shadow">
                 ${chart({
                   id: 'death-bar',
@@ -22689,9 +22752,7 @@
         return html`
       ${navbar}
       <div class="container mx-auto pt-5 px-5 lg:px-0">
-        <h1 class="text-4xl lg:text-6xl text-gray-700 font-bold">
-          ${state}
-        </h1>
+        ${stateDropdown(state)}
       </div>
       <div class="container mx-auto pb-5 px-5 lg:px-0 mb-5">
         ${dataCards(currentData, [
@@ -22718,9 +22779,9 @@
         ])}
       </div>
       <section>
-        <div class="container mb-10 px-5 lg:px-0 mx-auto ">
+        <div class="container px-5 lg:px-0 mx-auto ">
           <div class="flex flex-wrap -mx-4">
-            <div class="w-full lg:w-1/2 px-4">
+            <div class="w-full lg:w-1/2 px-4 mb-10">
               <div class="h-full bg-white p-5 rounded shadow">
                 ${chart({
                   id: 'positive',
@@ -22729,7 +22790,7 @@
                 })}
               </div>
             </div>
-            <div class="w-full lg:w-1/2 px-4">
+            <div class="w-full lg:w-1/2 px-4 mb-10">
               <div class="h-full bg-white p-5 rounded shadow">
                 ${chart({
                   id: 'pos-bar',
@@ -22740,9 +22801,9 @@
             </div>
           </div>
         </div>
-        <div class="container mb-10 px-5 lg:px-0 mx-auto ">
+        <div class="container px-5 lg:px-0 mx-auto ">
           <div class="flex flex-wrap -mx-4">
-            <div class="w-full lg:w-1/2 px-4">
+            <div class="w-full lg:w-1/2 px-4 mb-10">
               <div class="h-full bg-white p-5 rounded shadow">
                 ${chart({
                   id: 'deaths',
@@ -22751,7 +22812,7 @@
                 })}
               </div>
             </div>
-            <div class="w-full lg:w-1/2 px-4">
+            <div class="w-full lg:w-1/2 px-4 mb-10">
               <div class="h-full bg-white p-5 rounded shadow">
                 ${chart({
                   id: 'death-bar',
@@ -27346,8 +27407,10 @@
             death: value.death,
             deathIncrease: value.deathIncrease,
             hospitalized: value.hospitalized,
+            hospitalizedIncrease: value.hospitalizedIncrease,
             hospitalizedCurrently: value.hospitalizedCurrently,
             negative: value.negative,
+            negativeIncrease: value.negativeIncrease,
             positive: value.positive,
             positiveIncrease: value.positiveIncrease,
             recovered: value.recovered,
@@ -27419,6 +27482,7 @@
             const cache = this.cache[this.source];
             if (cache.us && cache.us.value && cache.us.value.length > 0) {
               return cache.us;
+            } else {
             }
           }
 

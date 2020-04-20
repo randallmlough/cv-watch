@@ -22513,7 +22513,7 @@
       };
 
       return html`
-    <div class="relative js-dropdown-wrapper">
+    <div class="relative inline-block js-dropdown-wrapper">
       <button
         class="flex items-center focus:outline-none"
         @click=${handleClick}
@@ -22539,6 +22539,14 @@
     </div>
   `;
     };
+
+    document.addEventListener('click', (e) => {
+      const wrapper = document.querySelector('.js-dropdown-wrapper');
+      if (!wrapper.contains(e.target)) {
+        const container = wrapper.querySelector('.js-dropdown-container');
+        container.classList.add('hidden');
+      }
+    });
 
     class Homepage extends Page {
       onMount() {

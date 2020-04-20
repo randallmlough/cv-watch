@@ -36,7 +36,7 @@ export const stateDropdown = (title) => {
   };
 
   return html`
-    <div class="relative js-dropdown-wrapper">
+    <div class="relative inline-block js-dropdown-wrapper">
       <button
         class="flex items-center focus:outline-none"
         @click=${handleClick}
@@ -62,3 +62,11 @@ export const stateDropdown = (title) => {
     </div>
   `;
 };
+
+document.addEventListener('click', (e) => {
+  const wrapper = document.querySelector('.js-dropdown-wrapper');
+  if (!wrapper.contains(e.target)) {
+    const container = wrapper.querySelector('.js-dropdown-container');
+    container.classList.add('hidden');
+  }
+});
